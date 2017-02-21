@@ -1,0 +1,43 @@
+[match]
+# The number of games to play.
+num_games = 10
+# The maximum number of plies for each game. The game will end in a draw after completing the specified number of moves. 
+max_ply = 256
+
+[time_control]
+# The amount of time given to the black player in milliseconds.
+black_time = 60000
+# The amount of time given to the white player in milliseconds.
+white_time = 60000
+# The increment per move for the black player in milliseconds.
+black_inc = 10000
+# The increment per move for the white player in milliseconds.
+white_inc = 10000
+# Byoyomi time in milliseconds. If "byoyomi" is specified, "black_inc" and "white_inc" can't be specified.
+# byoyomi = 10000
+
+[black]
+# The path to the USI engine executable for the black player.
+engine_path = "/path/to/executable"
+# The path to working directory when launching the USI engine for the black player.
+working_dir = "/path/to/dir"
+# Whether or not to enable pondering for the black player.
+ponder = false
+
+    # Any key-value pairs to send to the black USI engine as "setoption" commands.
+    [black.options]
+    USI_Hash = 128
+    Threads = 1
+
+[white]
+# The path to the USI engine executable for the white player.
+engine_path = "/path/to/executable"
+# The path to working directory when launching the USI engine for the white player.
+working_dir = "/path/to/dir"
+# Whether or not to enable pondering for the white player.
+ponder = false
+
+    # Any key-value pairs to send to the white USI engine as "setoption" commands.
+    [white.options]
+    USI_Hash = 128
+    Threads = 1
