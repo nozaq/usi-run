@@ -1,0 +1,61 @@
+# usi-run
+
+[![Build Status](https://travis-ci.org/nozaq/usi-run.svg?branch=master)](https://travis-ci.org/nozaq/usi-run)
+
+A command line utility for running games between USI compliant Shogi engines.
+
+## Installing
+
+`usi-run` can be installed from Cargo.
+
+```
+$ cargo install usi-run
+```
+
+## Usage
+
+```
+A command line utility for running games between USI compliant Shogi engines.                        │
+                                                                                                     │
+USAGE:                                                                                               │
+    usirun [OPTIONS] --config <TOML>                                                                 │
+                                                                                                     │
+FLAGS:                                                                                               │
+    -h, --help       Prints help information                                                         │
+    -V, --version    Prints version information                                                      │
+                                                                                                     │
+OPTIONS:                                                                                             │
+    -c, --config <TOML>     Loads a configuration file for setting up match rules                    │
+    -d, --display <MODE>    Displays  [values: board, command, simple]
+```
+
+A configuration file looks like the following. See [example.toml](https://github.com/nozaq/usi-run/blob/master/example.toml) for more detail.
+```
+[match]
+num_games = 10
+max_ply = 256
+
+[time_control]
+black_time = 60000
+white_time = 60000
+black_inc = 10000
+white_inc = 10000
+
+[black]
+engine_path = "/path/to/executable"
+working_dir = "/path/to/dir"
+ponder = false
+
+    [black.options]
+    USI_Hash = 128
+    Threads = 1
+
+[white]
+engine_path = "/path/to/executable"
+working_dir = "/path/to/dir"
+ponder = false
+
+    [white.options]
+    USI_Hash = 128
+    Threads = 1
+```
