@@ -16,6 +16,7 @@ pub enum Action {
     Ready(Color),
     RequestState,
     MakeMove(Color, Move, Instant),
+    DeclareWinning(Color),
     Resign(Color),
 }
 
@@ -25,6 +26,7 @@ pub enum GameOverReason {
     IllegalMove,
     OutOfTime,
     MaxPly,
+    DeclareWinning,
 }
 
 #[derive(Debug, Clone)]
@@ -148,6 +150,17 @@ impl Environment {
 
                         try!(transmit(&Event::GameOver(Some(c.flip()), GameOverReason::Resign)));
                         break;
+                    }
+                }
+                Action::DeclareWinning(c) => {
+                    if let Some(game) = shared_game.read().ok() {
+                        if game.pos.try_declare_winning(c) {
+                            try!(transmit(&Event::GameOver(Some(c),
+                                                           GameOverReason::DeclareWinning)));
+                        } else {
+                            try!(transmit(&Event::GameOver(Some(c.flip()),
+                                                           GameOverReason::DeclareWinning)));
+                        }
                     }
                 }
                 _ => {}

@@ -134,22 +134,25 @@ impl UsiEngine {
                             }
                             Some(EngineCommand::BestMove(BestMoveParams::MakeMove(ref best_move,
                                                                          ref ponder_move))) => {
-                            if let Some(pending) = pending.lock().ok() {
-                                if let Some(_) = *pending {
-                                    try!(action_out.send(Action::RequestState));
-                                    continue;
+                                if let Some(pending) = pending.lock().ok() {
+                                    if let Some(_) = *pending {
+                                        try!(action_out.send(Action::RequestState));
+                                        continue;
+                                    }
                                 }
-                            }
 
-                            if ponder {
-                                if let Some(mut guard) = pondering.lock().ok() {
-                                    *guard = *ponder_move;
+                                if ponder {
+                                    if let Some(mut guard) = pondering.lock().ok() {
+                                        *guard = *ponder_move;
+                                    }
                                 }
+                                try!(action_out.send(Action::MakeMove(color, *best_move, *output.timestamp())));
                             }
-                            try!(action_out.send(Action::MakeMove(color, *best_move, *output.timestamp())));
-                        }
                             Some(EngineCommand::BestMove(BestMoveParams::Resign)) => {
                                 try!(action_out.send(Action::Resign(color)));
+                            }
+                            Some(EngineCommand::BestMove(BestMoveParams::Win)) => {
+                                try!(action_out.send(Action::DeclareWinning(color)));
                             }
                             Some(EngineCommand::Info(ref v)) => {
                                 if let Some(score_entry) =
