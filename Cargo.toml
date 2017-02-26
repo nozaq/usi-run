@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 clap = "2"
-shogi = "0.4"
+shogi = "0.5"
 toml = "0.3"
 
 [[bin]]
