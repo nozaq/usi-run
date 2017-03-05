@@ -16,6 +16,7 @@ use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use clap::{App, Arg};
 use shogi::Color;
+use shogi::bitboard::Factory;
 
 use config::*;
 use environment::*;
@@ -56,6 +57,8 @@ fn main() {
             _ => DisplayMode::Simple,
         }
     }
+
+    Factory::init();
 
     match run_match(&match_config) {
         Ok(ref stats) => {
