@@ -1,3 +1,13 @@
+<a name="0.2.2"></a>
+## 0.2.2 (2017-03-05)
+
+
+#### Performance
+
+*   add profiles for test/release targets ([93dffd87](93dffd87))
+
+
+
 <a name="0.2.1"></a>
 ## 0.2.1 (2017-03-05)
 
