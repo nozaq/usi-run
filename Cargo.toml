@@ -1,6 +1,6 @@
 [package]
 name = "usi-run"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Takashi Nozawa <nozazon@gmail.com>"]
 description = "A command line utility for running games between USI compliant Shogi engines."
 keywords = ["shogi", "usi", "sfen"]
