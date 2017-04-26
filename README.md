@@ -34,7 +34,7 @@ OPTIONS:                                                                        
 ```
 
 A configuration file looks like the following. See [example.toml](https://github.com/nozaq/usi-run/blob/master/example.toml) for more detail.
-```
+```toml
 [match]
 num_games = 10
 max_ply = 256
