@@ -5,10 +5,17 @@ pub struct MatchStatistics {
     black_wins: u32,
     white_wins: u32,
     draw_games: u32,
+    finished_games: u32,
     total_games: u32,
 }
 
 impl MatchStatistics {
+    pub fn new(num_games: u32) -> MatchStatistics {
+        let mut stats = MatchStatistics::default();
+        stats.total_games = num_games;
+        stats
+    }
+
     pub fn black_wins(&self) -> u32 {
         self.black_wins
     }
@@ -19,6 +26,10 @@ impl MatchStatistics {
 
     pub fn draw_games(&self) -> u32 {
         self.draw_games
+    }
+
+    pub fn finished_games(&self) -> u32 {
+        self.finished_games
     }
 
     pub fn total_games(&self) -> u32 {
@@ -47,10 +58,10 @@ impl MatchStatistics {
         } else {
             self.draw_games += 1;
         }
-        self.total_games += 1;
+        self.finished_games += 1;
     }
 
     fn calc_rate(&self, n: u32) -> f32 {
-        (n as f32) / (self.total_games as f32)
+        (n as f32) / (self.finished_games as f32)
     }
 }

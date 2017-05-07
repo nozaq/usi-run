@@ -19,7 +19,7 @@ impl BoardReporter {
 }
 
 impl Reporter for BoardReporter {
-    fn on_game_event(&self, event: &Event, stats: &MatchStatistics) {
+    fn on_game_event(&mut self, event: &Event, stats: &MatchStatistics) {
         match *event {
             Event::NewTurn(ref game) => {
                 if let Some(game) = game.read().ok() {
@@ -38,12 +38,12 @@ impl Reporter for BoardReporter {
                     Some(c) => {
                         let name = if c == Color::Black { "Black" } else { "White" };
                         println!("Game #{}: {} wins({:?})",
-                                    stats.total_games() + 1,
+                                    stats.finished_games() + 1,
                                     name,
                                     reason);
                     }
                     None => {
-                        println!("Game #{}: Draw({:?})", stats.total_games() + 1, reason);
+                        println!("Game #{}: Draw({:?})", stats.finished_games() + 1, reason);
                     }
                 }
             }

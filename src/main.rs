@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate indicatif;
 extern crate toml;
 extern crate shogi;
 
@@ -11,7 +12,7 @@ mod reporter;
 mod stats;
 mod usi;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use clap::{App, Arg};
@@ -42,7 +43,8 @@ fn main() {
             .value_name("MODE")
             .help("Displays ")
             .takes_value(true)
-            .possible_values(&["board", "command", "simple"]))
+            .possible_values(&["board", "command", "simple"])
+            .default_value("simple"))
         .get_matches();
 
     let mut match_config = MatchConfig::default();
@@ -62,20 +64,7 @@ fn main() {
     Factory::init();
 
     match run_match(&match_config) {
-        Ok(ref stats) => {
-            println!("");
-            println!("Match statistics");
-            println!("Black: {} ({:.2}%)",
-                     stats.black_wins(),
-                     stats.black_win_rate() * 100.0);
-            println!("White: {} ({:.2}%)",
-                     stats.white_wins(),
-                     stats.white_win_rate() * 100.0);
-            println!("Draw : {} ({:.2}%)",
-                     stats.draw_games(),
-                     stats.draw_game_rate() * 100.0);
-
-        } 
+        Ok(_) => {} 
         Err(e) => {
             println!("an error occurred during the match: {}", e);
         }
@@ -94,10 +83,10 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
     let mut black_engine = try!(UsiEngine::launch(Color::Black, &config.black_engine));
     let mut white_engine = try!(UsiEngine::launch(Color::White, &config.white_engine));
 
-    let reporter: Arc<Reporter + Send + Sync> = match config.display {
-        DisplayMode::Board => Arc::new(BoardReporter::new(black_engine.score.clone(), white_engine.score.clone())),
-        DisplayMode::Command => Arc::new(UsiReporter{}),
-        DisplayMode::Simple => Arc::new(SimpleReporter{}),
+    let reporter: Arc<Mutex<Reporter + Send + Sync>> = match config.display {
+        DisplayMode::Board => Arc::new(Mutex::new(BoardReporter::new(black_engine.score.clone(), white_engine.score.clone()))),
+        DisplayMode::Command => Arc::new(Mutex::new(UsiReporter{})),
+        DisplayMode::Simple => Arc::new(Mutex::new(SimpleReporter::default())),
     };
     set_command_logger(Color::Black, &mut black_engine, reporter.clone());
     set_command_logger(Color::White, &mut white_engine, reporter.clone());
@@ -109,32 +98,34 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
 
     for _ in 0..config.num_games {
         try!(env.start_game(&[&black_tx, &white_tx, &monitor_tx]));
-   }
+    }
 
     try!(black_engine.kill());
     try!(white_engine.kill());
 
     let stats = monitor_handle.join().expect("unexpected error occurred in the monitoring thread");
 
+    reporter.lock().unwrap().on_match_finished(&stats);
+
     Ok(stats)
 }
 
 fn start_monitor_thread(config: &MatchConfig,
                         rx: Receiver<Event>, 
-                        reporter: Arc<Reporter + Send + Sync>)
+                        reporter: Arc<Mutex<Reporter + Send + Sync>>)
                         -> thread::JoinHandle<MatchStatistics> {
     let num_games = config.num_games;
 
     thread::spawn(move || {
-        let mut results = MatchStatistics::default();
+        let mut results = MatchStatistics::new(num_games);
 
         while let Some(event) = rx.recv().ok() {
-            reporter.on_game_event(&event, &results);
+            reporter.lock().unwrap().on_game_event(&event, &results);
 
             match event {
                 Event::GameOver(winner, _) => {
                     results.record_game(winner);
-                    if num_games == results.total_games() {
+                    if num_games == results.finished_games() {
                         break;
                     }
                 }
@@ -146,15 +137,15 @@ fn start_monitor_thread(config: &MatchConfig,
     })
 }
 
-fn set_command_logger(color: Color, engine: &mut UsiEngine, reporter: Arc<Reporter + Send + Sync>) {
+fn set_command_logger(color: Color, engine: &mut UsiEngine, reporter: Arc<Mutex<Reporter + Send + Sync>>) {
     let read_reporter = reporter.clone();
     let write_reporter = reporter.clone();
 
     engine.set_read_hook(Some(Box::new(move |output| {
-        read_reporter.on_receive_command(color, &output);
+        read_reporter.lock().unwrap().on_receive_command(color, &output);
     })));
 
     engine.set_write_hook(Some(Box::new(move |command, raw_str| {
-        write_reporter.on_send_command(color, &command, raw_str);
+        write_reporter.lock().unwrap().on_send_command(color, &command, raw_str);
     })));
 }
