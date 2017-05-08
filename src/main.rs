@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate indicatif;
 extern crate toml;
 extern crate shogi;
 
@@ -7,11 +8,11 @@ mod config;
 mod environment;
 mod error;
 mod game;
+mod reporter;
 mod stats;
 mod usi;
 
-use std::io::Write;
-use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 use clap::{App, Arg};
@@ -23,6 +24,7 @@ use environment::*;
 use error::*;
 use stats::*;
 use usi::*;
+use reporter::{Reporter, BoardReporter, UsiReporter, SimpleReporter};
 
 fn main() {
     let matches = App::new("usirun")
@@ -41,7 +43,8 @@ fn main() {
             .value_name("MODE")
             .help("Displays ")
             .takes_value(true)
-            .possible_values(&["board", "command", "simple"]))
+            .possible_values(&["board", "command", "simple"])
+            .default_value("simple"))
         .get_matches();
 
     let mut match_config = MatchConfig::default();
@@ -61,20 +64,7 @@ fn main() {
     Factory::init();
 
     match run_match(&match_config) {
-        Ok(ref stats) => {
-            println!("");
-            println!("Match statistics");
-            println!("Black: {} ({:.2}%)",
-                     stats.black_wins(),
-                     stats.black_win_rate() * 100.0);
-            println!("White: {} ({:.2}%)",
-                     stats.white_wins(),
-                     stats.white_win_rate() * 100.0);
-            println!("Draw : {} ({:.2}%)",
-                     stats.draw_games(),
-                     stats.draw_game_rate() * 100.0);
-
-        } 
+        Ok(_) => {} 
         Err(e) => {
             println!("an error occurred during the match: {}", e);
         }
@@ -93,23 +83,21 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
     let mut black_engine = try!(UsiEngine::launch(Color::Black, &config.black_engine));
     let mut white_engine = try!(UsiEngine::launch(Color::White, &config.white_engine));
 
-    if config.display == DisplayMode::Command {
-        set_command_logger(Color::Black, &mut black_engine);
-        set_command_logger(Color::White, &mut white_engine);
-    }
+    let reporter: Arc<Mutex<Reporter + Send + Sync>> = match config.display {
+        DisplayMode::Board => Arc::new(Mutex::new(BoardReporter::new(black_engine.score.clone(), white_engine.score.clone()))),
+        DisplayMode::Command => Arc::new(Mutex::new(UsiReporter{})),
+        DisplayMode::Simple => Arc::new(Mutex::new(SimpleReporter::default())),
+    };
+    set_command_logger(Color::Black, &mut black_engine, reporter.clone());
+    set_command_logger(Color::White, &mut white_engine, reporter.clone());
 
     black_engine.listen(env.new_sender(), black_rx);
     white_engine.listen(env.new_sender(), white_rx);
 
-    let monitor_handle = start_monitor_thread(&config, &black_engine, &white_engine, monitor_rx);
+    let monitor_handle = start_monitor_thread(&config, monitor_rx, reporter.clone());
 
     for _ in 0..config.num_games {
         try!(env.start_game(&[&black_tx, &white_tx, &monitor_tx]));
-
-        if config.display == DisplayMode::Simple {
-            print!(".");
-            try!(std::io::stdout().flush());
-        }
     }
 
     try!(black_engine.kill());
@@ -117,56 +105,27 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
 
     let stats = monitor_handle.join().expect("unexpected error occurred in the monitoring thread");
 
+    reporter.lock().unwrap().on_match_finished(&stats);
+
     Ok(stats)
 }
 
 fn start_monitor_thread(config: &MatchConfig,
-                        black_engine: &UsiEngine,
-                        white_engine: &UsiEngine,
-                        rx: Receiver<Event>)
+                        rx: Receiver<Event>, 
+                        reporter: Arc<Mutex<Reporter + Send + Sync>>)
                         -> thread::JoinHandle<MatchStatistics> {
     let num_games = config.num_games;
-    let display = config.display;
-    let black_score = black_engine.score.clone();
-    let white_score = white_engine.score.clone();
 
     thread::spawn(move || {
-        let mut results = MatchStatistics::default();
+        let mut results = MatchStatistics::new(num_games);
 
         while let Some(event) = rx.recv().ok() {
-            match event {
-                Event::NewTurn(game) => {
-                    if display == DisplayMode::Board {
-                        if let Some(game) = game.read().ok() {
-                            println!("{}", game.pos);
-                            println!("Time: (Black) {}s, (White) {}s",
-                                     game.time.black_time().as_secs(),
-                                     game.time.white_time().as_secs());
-                            println!("Score (Black) {}, (White) {}",
-                                     black_score.load(Ordering::Relaxed),
-                                     white_score.load(Ordering::Relaxed));
-                            println!("");
-                        }
-                    }
-                }
-                Event::GameOver(winner, reason) => {
-                    if display == DisplayMode::Board {
-                        match winner {
-                            Some(c) => {
-                                let name = if c == Color::Black { "Black" } else { "White" };
-                                println!("Game #{}: {} wins({:?})",
-                                         results.total_games() + 1,
-                                         name,
-                                         reason);
-                            }
-                            None => {
-                                println!("Game #{}: Draw({:?})", results.total_games() + 1, reason);
-                            }
-                        }
-                    }
+            reporter.lock().unwrap().on_game_event(&event, &results);
 
+            match event {
+                Event::GameOver(winner, _) => {
                     results.record_game(winner);
-                    if num_games == results.total_games() {
+                    if num_games == results.finished_games() {
                         break;
                     }
                 }
@@ -178,14 +137,15 @@ fn start_monitor_thread(config: &MatchConfig,
     })
 }
 
-fn set_command_logger(color: Color, engine: &mut UsiEngine) {
-    let prefix = if color == Color::Black { "B" } else { "W" };
+fn set_command_logger(color: Color, engine: &mut UsiEngine, reporter: Arc<Mutex<Reporter + Send + Sync>>) {
+    let read_reporter = reporter.clone();
+    let write_reporter = reporter.clone();
 
     engine.set_read_hook(Some(Box::new(move |output| {
-        print!("{}> {}", prefix, output.raw_str());
+        read_reporter.lock().unwrap().on_receive_command(color, &output);
     })));
 
-    engine.set_write_hook(Some(Box::new(move |_, raw_str| {
-        print!("{}< {}", prefix, raw_str);
+    engine.set_write_hook(Some(Box::new(move |command, raw_str| {
+        write_reporter.lock().unwrap().on_send_command(color, &command, raw_str);
     })));
 }
