@@ -11,6 +11,7 @@ license = "MIT"
 
 [dependencies]
 clap = "2"
+indicatif = "0.3"
 shogi = "0.6"
 toml = "0.3"
 
