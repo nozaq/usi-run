@@ -36,18 +36,6 @@ impl MatchStatistics {
         self.total_games
     }
 
-    pub fn black_win_rate(&self) -> f32 {
-        self.calc_rate(self.black_wins)
-    }
-
-    pub fn white_win_rate(&self) -> f32 {
-        self.calc_rate(self.white_wins)
-    }
-
-    pub fn draw_game_rate(&self) -> f32 {
-        self.calc_rate(self.draw_games)
-    }
-
     pub fn record_game(&mut self, winner: Option<Color>) {
         if let Some(winner) = winner {
             if winner == Color::Black {
@@ -59,9 +47,5 @@ impl MatchStatistics {
             self.draw_games += 1;
         }
         self.finished_games += 1;
-    }
-
-    fn calc_rate(&self, n: u32) -> f32 {
-        (n as f32) / (self.finished_games as f32)
     }
 }

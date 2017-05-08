@@ -57,8 +57,4 @@ impl Reporter for SimpleReporter {
             _ => {}
         }
     }
-
-    fn on_match_finished(&mut self, stats: &MatchStatistics) {
-        println!("{}\t{}\t{}\t{}", stats.finished_games(), stats.black_wins(), stats.white_wins(), stats.draw_games());
-    }
 }
