@@ -1,3 +1,11 @@
+<a name="0.3.0"></a>
+## 0.3.0 (2017-05-09)
+
+
+#### Features
+
+*   improve progress reporting
+
 <a name="0.2.2"></a>
 ## 0.2.2 (2017-03-05)
 
