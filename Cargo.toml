@@ -16,6 +16,10 @@ shogi = "0.7"
 toml = "0.3"
 usi = "0.1"
 
+[badges]
+travis-ci = { repository = "nozaq/usi-run" }
+appveyor = { repository = "nozaq/usi-run" }
+
 [[bin]]
 name = "usirun"
 
