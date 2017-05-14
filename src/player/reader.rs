@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader, Read};
 use std::time::Instant;
-use shogi::usi::EngineCommand;
+use usi::EngineCommand;
 
 use error::Error;
 
@@ -80,7 +80,7 @@ impl<T: Read> EngineCommandReader<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use shogi::usi::BestMoveParams;
+    use usi::BestMoveParams;
 
     #[test]
     fn it_works() {

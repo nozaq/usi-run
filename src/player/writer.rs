@@ -1,5 +1,5 @@
 use std::io::Write;
-use shogi::usi::GuiCommand;
+use usi::GuiCommand;
 
 use error::Error;
 

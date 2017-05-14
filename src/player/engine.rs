@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::mpsc::{Sender, Receiver};
 use std::thread;
-use shogi::{Color, Move, TimeControl};
-use shogi::usi::*;
+use shogi::{Color, Move, TimeControl, SfenError};
+use usi::*;
 
 use EngineConfig;
 use error::Error;
@@ -132,7 +132,7 @@ impl UsiEngine {
                             Some(EngineCommand::ReadyOk) => {
                                 try!(action_out.send(Action::Ready(color)));
                             }
-                            Some(EngineCommand::BestMove(BestMoveParams::MakeMove(ref best_move,
+                            Some(EngineCommand::BestMove(BestMoveParams::MakeMove(ref best_move_sfen,
                                                                          ref ponder_move))) => {
                                 if let Some(pending) = pending.lock().ok() {
                                     if let Some(_) = *pending {
@@ -143,10 +143,19 @@ impl UsiEngine {
 
                                 if ponder {
                                     if let Some(mut guard) = pondering.lock().ok() {
-                                        *guard = *ponder_move;
+                                        if let Some(ref ponder_move) = *ponder_move {
+                                            if let Some(ponder_move) = Move::from_sfen(ponder_move) {
+                                                *guard = Some(ponder_move);
+                                            }
+                                        }
                                     }
                                 }
-                                try!(action_out.send(Action::MakeMove(color, *best_move, *output.timestamp())));
+
+                                if let Some(best_move) = Move::from_sfen(best_move_sfen) {
+                                    try!(action_out.send(Action::MakeMove(color, best_move, *output.timestamp())));
+                                } else {
+                                    return Err(Error::Sfen(SfenError{}));
+                                }
                             }
                             Some(EngineCommand::BestMove(BestMoveParams::Resign)) => {
                                 try!(action_out.send(Action::Resign(color)));
