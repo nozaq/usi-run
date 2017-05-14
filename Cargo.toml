@@ -1,6 +1,6 @@
 [package]
 name = "usi-run"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Takashi Nozawa <nozazon@gmail.com>"]
 description = "A command line utility for running games between USI compliant Shogi engines."
 keywords = ["shogi", "usi", "sfen"]
@@ -12,8 +12,9 @@ license = "MIT"
 [dependencies]
 clap = "2"
 indicatif = "0.3"
-shogi = "0.6"
+shogi = "0.7"
 toml = "0.3"
+usi = "0.1"
 
 [[bin]]
 name = "usirun"
