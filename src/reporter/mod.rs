@@ -1,8 +1,9 @@
 use environment::Event;
 use shogi::Color;
 use stats::MatchStatistics;
-use shogi::usi::GuiCommand;
-use usi::EngineOutput;
+use usi::GuiCommand;
+
+use player::EngineOutput;
 
 pub trait Reporter {
     fn on_send_command(&mut self, Color, &GuiCommand, &str) {}

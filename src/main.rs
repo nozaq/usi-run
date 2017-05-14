@@ -3,6 +3,7 @@ extern crate clap;
 extern crate indicatif;
 extern crate toml;
 extern crate shogi;
+extern crate usi;
 
 mod config;
 mod environment;
@@ -10,7 +11,7 @@ mod error;
 mod game;
 mod reporter;
 mod stats;
-mod usi;
+mod player;
 
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Receiver};
@@ -23,7 +24,7 @@ use config::*;
 use environment::*;
 use error::*;
 use stats::*;
-use usi::*;
+use player::*;
 use reporter::{Reporter, BoardReporter, UsiReporter, SimpleReporter};
 
 fn main() {

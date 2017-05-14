@@ -1,7 +1,7 @@
 use std::{error, fmt, io};
 use std::sync::mpsc::{SendError, RecvError};
 use shogi::{SfenError, MoveError};
-use shogi::usi;
+use usi;
 
 #[derive(Debug)]
 pub enum Error {

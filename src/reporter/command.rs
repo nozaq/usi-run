@@ -1,8 +1,9 @@
 use std;
 use std::io::Write;
 use shogi::Color;
-use shogi::usi::GuiCommand;
-use usi::EngineOutput;
+use usi::GuiCommand;
+
+use player::EngineOutput;
 
 use super::Reporter;
 
