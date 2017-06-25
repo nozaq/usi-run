@@ -7,8 +7,8 @@ use player::EngineOutput;
 
 use super::Reporter;
 
-pub struct UsiReporter {
-}
+#[derive(Default)]
+pub struct UsiReporter {}
 
 impl Reporter for UsiReporter {
     fn on_send_command(&mut self, color: Color, _: &GuiCommand, raw_str: &str) {

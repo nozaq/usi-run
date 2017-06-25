@@ -16,6 +16,7 @@ use super::writer::*;
 
 pub struct UsiEngine {
     pub color: Color,
+    pub name: String,
     pub score: Arc<AtomicIsize>,
     ponder: bool,
     process: Child,
@@ -41,11 +42,15 @@ impl UsiEngine {
         let mut w = GuiCommandWriter::new(stdin);
         let mut r = EngineCommandReader::new(stdout);
 
+        let mut engine_name = String::new();
         let mut opts = HashMap::new();
         try!(w.send(&GuiCommand::Usi));
         loop {
             let output = try!(r.next());
             match *output.response() {
+                Some(EngineCommand::Id(IdParams::Name(ref name))) => {
+                    engine_name = name.to_string();
+                }
                 Some(EngineCommand::Option(OptionParams { ref name, ref value })) => {
                     opts.insert(name.to_string(),
                                 match value {
@@ -82,6 +87,7 @@ impl UsiEngine {
 
         Ok(UsiEngine {
             color: color,
+            name: engine_name,
             ponder: config.ponder,
             process: process,
             reader: Arc::new(Mutex::new(r)),
@@ -229,7 +235,7 @@ impl UsiEngine {
                         score.store(0, Ordering::Relaxed);
                         try!(write(&GuiCommand::UsiNewGame));
                     }
-                    Event::NewTurn(shared_game) => {
+                    Event::NewTurn(shared_game, _) => {
                         if let Some(game) = shared_game.read().ok() {
                             if game.pos.side_to_move() == color {
                                 if let Some(guard) = pondering.lock().ok() {
