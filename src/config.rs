@@ -8,6 +8,7 @@ use toml::Value;
 pub enum DisplayMode {
     Board,
     Command,
+    Csa,
     Simple,
 }
 
@@ -60,17 +61,21 @@ impl TimeControlConfig {
             self.white_time = Duration::from_millis(wtime as u64);
         }
 
-        self.byoyomi = value.get("byoyomi")
-            .and_then(|v| v.as_integer())
-            .map(|v| Duration::from_millis(v as u64));
+        self.byoyomi = value.get("byoyomi").and_then(|v| v.as_integer()).map(|v| {
+            Duration::from_millis(v as u64)
+        });
 
-        self.black_inc = value.get("black_inc")
-            .and_then(|v| v.as_integer())
-            .map(|v| Duration::from_millis(v as u64));
+        self.black_inc = value.get("black_inc").and_then(|v| v.as_integer()).map(
+            |v| {
+                Duration::from_millis(v as u64)
+            },
+        );
 
-        self.white_inc = value.get("white_inc")
-            .and_then(|v| v.as_integer())
-            .map(|v| Duration::from_millis(v as u64));
+        self.white_inc = value.get("white_inc").and_then(|v| v.as_integer()).map(
+            |v| {
+                Duration::from_millis(v as u64)
+            },
+        );
     }
 
     pub fn to_time_control(&self) -> TimeControl {
@@ -124,10 +129,17 @@ impl MatchConfig {
 
         let value = buf.parse::<Value>().unwrap();
 
-        self.num_games =
-            value.get("num_games").and_then(|v| v.as_integer()).map(|v| v as u32).unwrap_or(1);
-        self.max_ply = value.get("max_ply").and_then(|v| v.as_integer()).map(|v| v as u16);
-        self.initial_pos = value.get("initial_pos").and_then(|v| v.as_str()).map(|v| v.to_string());
+        self.num_games = value
+            .get("num_games")
+            .and_then(|v| v.as_integer())
+            .map(|v| v as u32)
+            .unwrap_or(1);
+        self.max_ply = value.get("max_ply").and_then(|v| v.as_integer()).map(|v| {
+            v as u16
+        });
+        self.initial_pos = value.get("initial_pos").and_then(|v| v.as_str()).map(|v| {
+            v.to_string()
+        });
 
         if let Some(black) = value.get("black") {
             self.black_engine.merge(&black);

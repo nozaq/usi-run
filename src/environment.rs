@@ -1,15 +1,12 @@
 use std::sync::{Arc, RwLock};
 use std::sync::mpsc::{channel, Sender, Receiver};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use shogi::*;
 
 use game::Game;
 use error::Error;
 
-const DEFAULT_SFEN: &'static str = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - \
-                                    1";
-
-type SharedGame = Arc<RwLock<Game>>;
+pub type SharedGame = Arc<RwLock<Game>>;
 
 #[derive(Debug)]
 pub enum Action {
@@ -33,7 +30,7 @@ pub enum GameOverReason {
 pub enum Event {
     IsReady,
     NewGame(SharedGame),
-    NewTurn(SharedGame),
+    NewTurn(SharedGame, Duration),
     NotifyState(SharedGame),
     GameOver(Option<Color>, GameOverReason),
 }
@@ -41,20 +38,16 @@ pub enum Event {
 pub struct Environment {
     tx: Sender<Action>,
     rx: Receiver<Action>,
-    initial_sfen: Option<String>,
-    time: TimeControl,
     max_ply: Option<u16>,
 }
 
 impl Environment {
-    pub fn new(time: &TimeControl) -> Environment {
+    pub fn new() -> Environment {
         let (tx, rx) = channel();
 
         Environment {
             tx: tx,
             rx: rx,
-            initial_sfen: None,
-            time: time.clone(),
             max_ply: None,
         }
     }
@@ -64,16 +57,11 @@ impl Environment {
         self
     }
 
-    pub fn initial_sfen(mut self, sfen: &Option<String>) -> Environment {
-        self.initial_sfen = sfen.clone();
-        self
-    }
-
     pub fn new_sender(&self) -> Sender<Action> {
         self.tx.clone()
     }
 
-    pub fn start_game(&mut self, listeners: &[&Sender<Event>]) -> Result<(), Error> {
+    pub fn start_game(&mut self, game: Game, listeners: &[&Sender<Event>]) -> Result<(), Error> {
         let transmit = |event: &Event| -> Result<(), Error> {
             for l in listeners.iter() {
                 try!(l.send(event.clone()));
@@ -81,12 +69,7 @@ impl Environment {
             Ok(())
         };
 
-        let shared_game = Arc::new(RwLock::new(Game::new(self.time.clone())));
-
-        if let Some(mut game) = shared_game.write().ok() {
-            try!(game.pos
-                .set_sfen(self.initial_sfen.as_ref().map_or(DEFAULT_SFEN, |v| v.as_str())));
-        }
+        let shared_game = Arc::new(RwLock::new(game));
 
         try!(transmit(&Event::IsReady));
         try!(self.wait_readyok());
@@ -95,17 +78,21 @@ impl Environment {
         if let Some(mut game) = shared_game.write().ok() {
             game.turn_start_time = Instant::now();
         }
-        try!(transmit(&Event::NewTurn(shared_game.clone())));
+        try!(transmit(
+            &Event::NewTurn(shared_game.clone(), Duration::from_secs(0)),
+        ));
 
         while let Some(action) = self.rx.recv().ok() {
-            match action {
+            match action {              
                 Action::RequestState => {
                     try!(transmit(&Event::NotifyState(shared_game.clone())));
                 }
                 Action::MakeMove(c, ref m, ref ts) => {
                     if let Some(mut game) = shared_game.write().ok() {
                         if c != game.pos.side_to_move() {
-                            try!(transmit(&Event::GameOver(Some(c), GameOverReason::IllegalMove)));
+                            try!(transmit(
+                                &Event::GameOver(Some(c), GameOverReason::IllegalMove),
+                            ));
                             break;
                         }
 
@@ -113,8 +100,9 @@ impl Environment {
                         match game.time.consume(c, elapsed) {
                             true => {}
                             false => {
-                                try!(transmit(&Event::GameOver(Some(c.flip()),
-                                                               GameOverReason::OutOfTime)));
+                                try!(transmit(
+                                    &Event::GameOver(Some(c.flip()), GameOverReason::OutOfTime),
+                                ));
                                 break;
                             }
                         }
@@ -123,18 +111,21 @@ impl Environment {
                             Ok(_) => {
                                 if let Some(max_ply) = self.max_ply {
                                     if game.pos.ply() >= max_ply {
-                                        try!(transmit(&Event::GameOver(None,
-                                                                       GameOverReason::MaxPly)));
+                                        try!(
+                                            transmit(&Event::GameOver(None, GameOverReason::MaxPly))
+                                        );
                                         break;
                                     }
                                 }
 
                                 game.turn_start_time = Instant::now();
-                                try!(transmit(&Event::NewTurn(shared_game.clone())));
+                                try!(transmit(&Event::NewTurn(shared_game.clone(), elapsed)));
                             }
                             Err(_) => {
-                                try!(transmit(&Event::GameOver(Some(c.flip()),
-                                                               GameOverReason::IllegalMove)));
+                                try!(transmit(&Event::GameOver(
+                                    Some(c.flip()),
+                                    GameOverReason::IllegalMove,
+                                )));
                                 break;
                             }
                         }
@@ -143,23 +134,30 @@ impl Environment {
                 Action::Resign(c) => {
                     if let Some(game) = shared_game.read().ok() {
                         if c != game.pos.side_to_move() {
-                            try!(transmit(&Event::GameOver(Some(c.flip()),
-                                                           GameOverReason::IllegalMove)));
+                            try!(transmit(&Event::GameOver(
+                                Some(c.flip()),
+                                GameOverReason::IllegalMove,
+                            )));
                             break;
                         }
 
-                        try!(transmit(&Event::GameOver(Some(c.flip()), GameOverReason::Resign)));
+                        try!(transmit(
+                            &Event::GameOver(Some(c.flip()), GameOverReason::Resign),
+                        ));
                         break;
                     }
                 }
                 Action::DeclareWinning(c) => {
                     if let Some(game) = shared_game.read().ok() {
                         if game.pos.try_declare_winning(c) {
-                            try!(transmit(&Event::GameOver(Some(c),
-                                                           GameOverReason::DeclareWinning)));
+                            try!(transmit(
+                                &Event::GameOver(Some(c), GameOverReason::DeclareWinning),
+                            ));
                         } else {
-                            try!(transmit(&Event::GameOver(Some(c.flip()),
-                                                           GameOverReason::DeclareWinning)));
+                            try!(transmit(&Event::GameOver(
+                                Some(c.flip()),
+                                GameOverReason::DeclareWinning,
+                            )));
                         }
                     }
                 }
@@ -203,11 +201,7 @@ mod tests {
 
     #[test]
     fn run_game() {
-        let mut env = Environment::new(&TimeControl::Byoyomi {
-            black_time: Duration::from_millis(0),
-            white_time: Duration::from_millis(0),
-            byoyomi: Duration::from_millis(100),
-        });
+        let mut env = Environment::new();
 
         let tx = env.new_sender();
         let (black_tx, black_rx) = channel();
@@ -236,11 +230,11 @@ mod tests {
             });
 
             assert!(match black_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::NewTurn(_)) => true,
+                Some(Event::NewTurn(_, _)) => true,
                 _ => false,
             });
             assert!(match white_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::NewTurn(_)) => true,
+                Some(Event::NewTurn(_, _)) => true,
                 _ => false,
             });
 
@@ -256,7 +250,14 @@ mod tests {
             });
         });
 
-        let res = env.start_game(&[&black_tx, &white_tx]);
+        let tc = TimeControl::Byoyomi {
+            black_time: Duration::from_millis(0),
+            white_time: Duration::from_millis(0),
+            byoyomi: Duration::from_millis(100),
+        };
+
+        let mut game = Game::new(tc.clone());
+        let res = env.start_game(game, &[&black_tx, &white_tx]);
         assert!(res.is_ok());
     }
 }

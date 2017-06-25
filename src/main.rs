@@ -1,5 +1,6 @@
-#[macro_use]
-extern crate clap;
+extern crate chrono;
+#[macro_use] extern crate clap;
+extern crate csa;
 extern crate indicatif;
 extern crate toml;
 extern crate shogi;
@@ -23,9 +24,13 @@ use shogi::bitboard::Factory;
 use config::*;
 use environment::*;
 use error::*;
+use game::*;
 use stats::*;
 use player::*;
-use reporter::{Reporter, BoardReporter, UsiReporter, SimpleReporter};
+use reporter::{Reporter, BoardReporter, CsaReporter, SimpleReporter, UsiReporter};
+
+const DEFAULT_SFEN: &'static str = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - \
+                                    1";
 
 fn main() {
     let matches = App::new("usirun")
@@ -44,7 +49,7 @@ fn main() {
             .value_name("MODE")
             .help("Displays ")
             .takes_value(true)
-            .possible_values(&["board", "command", "simple"])
+            .possible_values(&["board", "csa", "command", "simple"])
             .default_value("simple"))
         .get_matches();
 
@@ -58,6 +63,7 @@ fn main() {
         match_config.display = match display {
             "board" => DisplayMode::Board,
             "command" => DisplayMode::Command,
+            "csa" => DisplayMode::Csa,
             _ => DisplayMode::Simple,
         }
     }
@@ -73,9 +79,7 @@ fn main() {
 }
 
 fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
-    let mut env = Environment::new(&config.time.to_time_control())
-        .initial_sfen(&config.initial_pos)
-        .max_ply(config.max_ply);
+    let mut env = Environment::new().max_ply(config.max_ply);
 
     let (black_tx, black_rx) = channel();
     let (white_tx, white_rx) = channel();
@@ -86,7 +90,8 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
 
     let reporter: Arc<Mutex<Reporter + Send + Sync>> = match config.display {
         DisplayMode::Board => Arc::new(Mutex::new(BoardReporter::new(black_engine.score.clone(), white_engine.score.clone()))),
-        DisplayMode::Command => Arc::new(Mutex::new(UsiReporter{})),
+        DisplayMode::Command => Arc::new(Mutex::new(UsiReporter::default())),
+        DisplayMode::Csa => Arc::new(Mutex::new(CsaReporter::default())),
         DisplayMode::Simple => Arc::new(Mutex::new(SimpleReporter::default())),
     };
     set_command_logger(Color::Black, &mut black_engine, reporter.clone());
@@ -98,7 +103,15 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
     let monitor_handle = start_monitor_thread(&config, monitor_rx, reporter.clone());
 
     for _ in 0..config.num_games {
-        try!(env.start_game(&[&black_tx, &white_tx, &monitor_tx]));
+        let mut game = Game::new(config.time.to_time_control().clone());
+        game.black_player = black_engine.name.to_string();
+        game.white_player = white_engine.name.to_string();
+        try!(game.pos.set_sfen(config.initial_pos.as_ref().map_or(
+            DEFAULT_SFEN,
+            |v| v,
+        )));
+
+        try!(env.start_game(game, &[&black_tx, &white_tx, &monitor_tx]));
     }
 
     try!(black_engine.kill());

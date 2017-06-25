@@ -20,23 +20,22 @@ $ cargo install usi-run
 ## Usage
 
 ```
-A command line utility for running games between USI compliant Shogi engines.                        │
-                                                                                                     │
-USAGE:                                                                                               │
-    usirun [OPTIONS] --config <TOML>                                                                 │
-                                                                                                     │
-FLAGS:                                                                                               │
-    -h, --help       Prints help information                                                         │
-    -V, --version    Prints version information                                                      │
-                                                                                                     │
-OPTIONS:                                                                                             │
-    -c, --config <TOML>     Loads a configuration file for setting up match rules                    │
-    -d, --display <MODE>    Displays  [values: board, command, simple]
+A command line utility for running games between USI compliant Shogi engines.
+
+USAGE:
+    usirun [OPTIONS] --config <TOML>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -c, --config <TOML>     Loads a configuration file for setting up match rules
+    -d, --display <MODE>    Displays  [default: simple]  [values: board, csa, command, simple]
 ```
 
 A configuration file looks like the following. See [example.toml](https://github.com/nozaq/usi-run/blob/master/example.toml) for more detail.
 ```toml
-[match]
 num_games = 10
 max_ply = 256
 

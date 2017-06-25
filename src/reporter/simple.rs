@@ -8,7 +8,7 @@ use super::Reporter;
 
 #[derive(Default)]
 pub struct SimpleReporter {
-    current_bar: Option<ProgressBar>
+    current_bar: Option<ProgressBar>,
 }
 
 impl Reporter for SimpleReporter {
@@ -20,23 +20,25 @@ impl Reporter for SimpleReporter {
 
                 let bar = ProgressBar::new_spinner();
                 bar.set_draw_target(ProgressDrawTarget::stderr());
-                bar.set_style(ProgressStyle::default_spinner()
-                    .tick_chars("|/-\\ ")
-                    .template("{prefix:.bold.dim} {spinner} {msg}"));
+                bar.set_style(
+                    ProgressStyle::default_spinner()
+                        .tick_chars("|/-\\ ")
+                        .template("{prefix:.bold.dim} {spinner} {msg}"),
+                );
                 bar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
                 bar.set_message("Starting...");
                 self.current_bar = Some(bar);
-            },
-            Event::NewTurn(ref game) => {
+            }
+            Event::NewTurn(ref game, _) => {
                 if let Some(game) = game.read().ok() {
                     match self.current_bar {
                         Some(ref bar) => {
                             bar.set_message(&format!("Move #{}", game.pos.ply()));
-                        },
+                        }
                         None => {}
                     }
                 }
-            },
+            }
             Event::GameOver(winner, reason) => {
                 match self.current_bar {
                     Some(ref bar) => {
@@ -45,12 +47,10 @@ impl Reporter for SimpleReporter {
                                 let name = if c == Color::Black { "Black" } else { "White" };
                                 format!("{} won the game. ({:?})", name, reason)
                             }
-                            None => {
-                                format!("Draw({:?})", reason)
-                            }
+                            None => format!("Draw({:?})", reason),
                         };
                         bar.finish_with_message(&result);
-                    },
+                    }
                     None => {}
                 }
             }
