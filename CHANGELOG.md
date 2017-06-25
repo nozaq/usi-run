@@ -1,3 +1,12 @@
+<a name="0.5.0"></a>
+##  (2017-06-25)
+
+
+#### Features
+
+*   implement CSA display mode ([efa2f10b](efa2f10b))
+
+
 <a name="0.4.0"></a>
 ## 0.4.0 (2017-05-14)
 
