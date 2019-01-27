@@ -1,10 +1,10 @@
-use std::sync::{Arc, RwLock};
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::time::{Duration, Instant};
 use shogi::*;
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
-use game::Game;
-use error::Error;
+use crate::error::Error;
+use crate::game::Game;
 
 pub type SharedGame = Arc<RwLock<Game>>;
 
@@ -64,35 +64,37 @@ impl Environment {
     pub fn start_game(&mut self, game: Game, listeners: &[&Sender<Event>]) -> Result<(), Error> {
         let transmit = |event: &Event| -> Result<(), Error> {
             for l in listeners.iter() {
-                try!(l.send(event.clone()));
+                r#try!(l.send(event.clone()));
             }
             Ok(())
         };
 
         let shared_game = Arc::new(RwLock::new(game));
 
-        try!(transmit(&Event::IsReady));
-        try!(self.wait_readyok());
-        try!(transmit(&Event::NewGame(shared_game.clone())));
+        r#try!(transmit(&Event::IsReady));
+        r#try!(self.wait_readyok());
+        r#try!(transmit(&Event::NewGame(shared_game.clone())));
 
         if let Some(mut game) = shared_game.write().ok() {
             game.turn_start_time = Instant::now();
         }
-        try!(transmit(
-            &Event::NewTurn(shared_game.clone(), Duration::from_secs(0)),
-        ));
+        r#try!(transmit(&Event::NewTurn(
+            shared_game.clone(),
+            Duration::from_secs(0)
+        ),));
 
         while let Some(action) = self.rx.recv().ok() {
-            match action {              
+            match action {
                 Action::RequestState => {
-                    try!(transmit(&Event::NotifyState(shared_game.clone())));
+                    r#try!(transmit(&Event::NotifyState(shared_game.clone())));
                 }
                 Action::MakeMove(c, ref m, ref ts) => {
                     if let Some(mut game) = shared_game.write().ok() {
                         if c != game.pos.side_to_move() {
-                            try!(transmit(
-                                &Event::GameOver(Some(c), GameOverReason::IllegalMove),
-                            ));
+                            r#try!(transmit(&Event::GameOver(
+                                Some(c),
+                                GameOverReason::IllegalMove
+                            ),));
                             break;
                         }
 
@@ -100,9 +102,10 @@ impl Environment {
                         match game.time.consume(c, elapsed) {
                             true => {}
                             false => {
-                                try!(transmit(
-                                    &Event::GameOver(Some(c.flip()), GameOverReason::OutOfTime),
-                                ));
+                                r#try!(transmit(&Event::GameOver(
+                                    Some(c.flip()),
+                                    GameOverReason::OutOfTime
+                                ),));
                                 break;
                             }
                         }
@@ -111,18 +114,19 @@ impl Environment {
                             Ok(_) => {
                                 if let Some(max_ply) = self.max_ply {
                                     if game.pos.ply() >= max_ply {
-                                        try!(
-                                            transmit(&Event::GameOver(None, GameOverReason::MaxPly))
-                                        );
+                                        r#try!(transmit(&Event::GameOver(
+                                            None,
+                                            GameOverReason::MaxPly
+                                        )));
                                         break;
                                     }
                                 }
 
                                 game.turn_start_time = Instant::now();
-                                try!(transmit(&Event::NewTurn(shared_game.clone(), elapsed)));
+                                r#try!(transmit(&Event::NewTurn(shared_game.clone(), elapsed)));
                             }
                             Err(_) => {
-                                try!(transmit(&Event::GameOver(
+                                r#try!(transmit(&Event::GameOver(
                                     Some(c.flip()),
                                     GameOverReason::IllegalMove,
                                 )));
@@ -134,27 +138,29 @@ impl Environment {
                 Action::Resign(c) => {
                     if let Some(game) = shared_game.read().ok() {
                         if c != game.pos.side_to_move() {
-                            try!(transmit(&Event::GameOver(
+                            r#try!(transmit(&Event::GameOver(
                                 Some(c.flip()),
                                 GameOverReason::IllegalMove,
                             )));
                             break;
                         }
 
-                        try!(transmit(
-                            &Event::GameOver(Some(c.flip()), GameOverReason::Resign),
-                        ));
+                        r#try!(transmit(&Event::GameOver(
+                            Some(c.flip()),
+                            GameOverReason::Resign
+                        ),));
                         break;
                     }
                 }
                 Action::DeclareWinning(c) => {
                     if let Some(game) = shared_game.read().ok() {
                         if game.pos.try_declare_winning(c) {
-                            try!(transmit(
-                                &Event::GameOver(Some(c), GameOverReason::DeclareWinning),
-                            ));
+                            r#try!(transmit(&Event::GameOver(
+                                Some(c),
+                                GameOverReason::DeclareWinning
+                            ),));
                         } else {
-                            try!(transmit(&Event::GameOver(
+                            r#try!(transmit(&Event::GameOver(
                                 Some(c.flip()),
                                 GameOverReason::DeclareWinning,
                             )));
@@ -256,7 +262,7 @@ mod tests {
             byoyomi: Duration::from_millis(100),
         };
 
-        let mut game = Game::new(tc.clone());
+        let game = Game::new(tc.clone());
         let res = env.start_game(game, &[&black_tx, &white_tx]);
         assert!(res.is_ok());
     }

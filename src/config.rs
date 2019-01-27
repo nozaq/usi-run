@@ -1,7 +1,7 @@
+use shogi::TimeControl;
 use std::fs::File;
 use std::io::{Error, Read};
 use std::time::Duration;
-use shogi::TimeControl;
 use toml::Value;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -61,21 +61,20 @@ impl TimeControlConfig {
             self.white_time = Duration::from_millis(wtime as u64);
         }
 
-        self.byoyomi = value.get("byoyomi").and_then(|v| v.as_integer()).map(|v| {
-            Duration::from_millis(v as u64)
-        });
+        self.byoyomi = value
+            .get("byoyomi")
+            .and_then(|v| v.as_integer())
+            .map(|v| Duration::from_millis(v as u64));
 
-        self.black_inc = value.get("black_inc").and_then(|v| v.as_integer()).map(
-            |v| {
-                Duration::from_millis(v as u64)
-            },
-        );
+        self.black_inc = value
+            .get("black_inc")
+            .and_then(|v| v.as_integer())
+            .map(|v| Duration::from_millis(v as u64));
 
-        self.white_inc = value.get("white_inc").and_then(|v| v.as_integer()).map(
-            |v| {
-                Duration::from_millis(v as u64)
-            },
-        );
+        self.white_inc = value
+            .get("white_inc")
+            .and_then(|v| v.as_integer())
+            .map(|v| Duration::from_millis(v as u64));
     }
 
     pub fn to_time_control(&self) -> TimeControl {
@@ -123,9 +122,9 @@ pub struct MatchConfig {
 
 impl MatchConfig {
     pub fn load(&mut self, config_path: &str) -> Result<(), Error> {
-        let mut f = try!(File::open(config_path));
+        let mut f = r#try!(File::open(config_path));
         let mut buf = String::new();
-        try!(f.read_to_string(&mut buf));
+        r#try!(f.read_to_string(&mut buf));
 
         let value = buf.parse::<Value>().unwrap();
 
@@ -134,12 +133,14 @@ impl MatchConfig {
             .and_then(|v| v.as_integer())
             .map(|v| v as u32)
             .unwrap_or(1);
-        self.max_ply = value.get("max_ply").and_then(|v| v.as_integer()).map(|v| {
-            v as u16
-        });
-        self.initial_pos = value.get("initial_pos").and_then(|v| v.as_str()).map(|v| {
-            v.to_string()
-        });
+        self.max_ply = value
+            .get("max_ply")
+            .and_then(|v| v.as_integer())
+            .map(|v| v as u16);
+        self.initial_pos = value
+            .get("initial_pos")
+            .and_then(|v| v.as_str())
+            .map(|v| v.to_string());
 
         if let Some(black) = value.get("black") {
             self.black_engine.merge(&black);

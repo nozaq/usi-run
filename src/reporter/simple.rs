@@ -1,8 +1,8 @@
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 
-use environment::Event;
+use crate::environment::Event;
+use crate::stats::MatchStatistics;
 use shogi::Color;
-use stats::MatchStatistics;
 
 use super::Reporter;
 
@@ -39,21 +39,19 @@ impl Reporter for SimpleReporter {
                     }
                 }
             }
-            Event::GameOver(winner, reason) => {
-                match self.current_bar {
-                    Some(ref bar) => {
-                        let result = match winner {
-                            Some(c) => {
-                                let name = if c == Color::Black { "Black" } else { "White" };
-                                format!("{} won the game. ({:?})", name, reason)
-                            }
-                            None => format!("Draw({:?})", reason),
-                        };
-                        bar.finish_with_message(&result);
-                    }
-                    None => {}
+            Event::GameOver(winner, reason) => match self.current_bar {
+                Some(ref bar) => {
+                    let result = match winner {
+                        Some(c) => {
+                            let name = if c == Color::Black { "Black" } else { "White" };
+                            format!("{} won the game. ({:?})", name, reason)
+                        }
+                        None => format!("Draw({:?})", reason),
+                    };
+                    bar.finish_with_message(&result);
                 }
-            }
+                None => {}
+            },
             _ => {}
         }
     }
