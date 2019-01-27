@@ -1,14 +1,14 @@
-use environment::Event;
+use crate::environment::Event;
+use crate::stats::MatchStatistics;
+use ::usi::GuiCommand;
 use shogi::Color;
-use stats::MatchStatistics;
-use usi::GuiCommand;
 
-use player::EngineOutput;
+use crate::player::EngineOutput;
 
 pub trait Reporter {
-    fn on_send_command(&mut self, Color, &GuiCommand, &str) {}
-    fn on_receive_command(&mut self, Color, &EngineOutput) {}
-    fn on_game_event(&mut self, &Event, &MatchStatistics) {}
+    fn on_send_command(&mut self, _stm: Color, _command: &GuiCommand, _arg: &str) {}
+    fn on_receive_command(&mut self, _stm: Color, _output: &EngineOutput) {}
+    fn on_game_event(&mut self, _event: &Event, _stats: &MatchStatistics) {}
     fn on_match_finished(&mut self, stats: &MatchStatistics) {
         println!("Total\tBlack\tWhite\tDraw");
         println!(
@@ -23,10 +23,10 @@ pub trait Reporter {
 
 mod board;
 mod csa;
-mod usi;
 mod simple;
+mod usi;
 
 pub use self::board::*;
 pub use self::csa::*;
-pub use self::usi::*;
 pub use self::simple::*;
+pub use self::usi::*;

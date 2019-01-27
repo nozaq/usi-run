@@ -1,7 +1,7 @@
 use std::io::Write;
 use usi::GuiCommand;
 
-use error::Error;
+use crate::error::Error;
 
 pub struct GuiCommandWriter<T: Write> {
     writer: T,
@@ -18,8 +18,8 @@ impl<T: Write> GuiCommandWriter<T> {
 
     pub fn send(&mut self, command: &GuiCommand) -> Result<String, Error> {
         let s = format!("{}\n", command);
-        try!(self.writer.write_all(&s.as_bytes()));
-        try!(self.writer.flush());
+        r#try!(self.writer.write_all(&s.as_bytes()));
+        r#try!(self.writer.flush());
 
         for f in self.subscribers.iter_mut() {
             f(command, s.as_str());
@@ -37,11 +37,19 @@ mod tests {
     fn it_works() {
         let buf: Vec<u8> = Vec::new();
         let mut writer = GuiCommandWriter::new(buf);
-        let s = writer.send(&GuiCommand::Usi).expect("failed to write to the buffer");
+        let s = writer
+            .send(&GuiCommand::Usi)
+            .expect("failed to write to the buffer");
         assert_eq!("usi\n", s);
-        let s = writer.send(&GuiCommand::IsReady).expect("failed to write to the buffer");
+        let s = writer
+            .send(&GuiCommand::IsReady)
+            .expect("failed to write to the buffer");
         assert_eq!("isready\n", s);
-        let s = writer.send(&GuiCommand::SetOption("key".to_string(), Some("val".to_string())))
+        let s = writer
+            .send(&GuiCommand::SetOption(
+                "key".to_string(),
+                Some("val".to_string()),
+            ))
             .expect("failed to write to the buffer");
         assert_eq!("setoption name key value val\n", s);
     }

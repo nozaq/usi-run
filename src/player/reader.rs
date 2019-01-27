@@ -2,7 +2,7 @@ use std::io::{BufRead, BufReader, Read};
 use std::time::Instant;
 use usi::EngineCommand;
 
-use error::Error;
+use crate::error::Error;
 
 pub struct EngineOutput {
     response: Option<EngineCommand>,
@@ -53,7 +53,7 @@ impl<T: Read> EngineCommandReader<T> {
         let mut buf = String::new();
 
         loop {
-            let bytes_read = try!(self.receive.read_line(&mut buf));
+            let bytes_read = r#try!(self.receive.read_line(&mut buf));
             if bytes_read == 0 {
                 return Ok(EngineOutput {
                     response: None,
@@ -68,7 +68,7 @@ impl<T: Read> EngineCommandReader<T> {
             buf.clear();
         }
 
-        let res = try!(EngineCommand::parse(&buf));
+        let res = r#try!(EngineCommand::parse(&buf));
         Ok(EngineOutput {
             response: Some(res),
             raw_str: buf,

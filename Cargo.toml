@@ -8,22 +8,21 @@ categories = ["command-line-utilities", "game-engines"]
 repository = "https://github.com/nozaq/usi-run"
 readme = "README.md"
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 chrono = "0.4"
 clap = "2"
-csa = "0.2"
-indicatif = "0.3"
-shogi = "0.7"
-toml = "0.3"
-usi = "0.1"
+csa = "0.3"
+indicatif = "0.11"
+console = "0.7"
+shogi = "0.8"
+toml = "0.4"
+usi = "0.2"
 
 [badges]
 travis-ci = { repository = "nozaq/usi-run" }
 appveyor = { repository = "nozaq/usi-run" }
-
-[[bin]]
-name = "usirun"
 
 [profile.test]
 opt-level = 0

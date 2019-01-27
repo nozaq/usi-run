@@ -1,15 +1,15 @@
-use indicatif::Term;
+use console::Term;
 use std;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::Arc;
 
-use environment::Event;
+use crate::environment::Event;
+use crate::stats::MatchStatistics;
 use shogi::Color;
-use stats::MatchStatistics;
 
-use environment::GameOverReason;
-use game::Game;
 use super::Reporter;
+use crate::environment::GameOverReason;
+use crate::game::Game;
 
 pub struct BoardReporter {
     dirty: bool,
@@ -30,22 +30,22 @@ impl BoardReporter {
         let term = Term::stderr();
 
         if self.dirty {
-            try!(term.clear_last_lines(27));
+            r#try!(term.clear_last_lines(27));
             self.dirty = false;
         }
 
-        try!(term.write_line(&format!(
+        r#try!(term.write_line(&format!(
             "[{}/{}] Playing...",
             stats.finished_games() + 1,
             stats.total_games()
         )));
-        try!(term.write_line(&format!("{}", game.pos)));
-        try!(term.write_line(&format!(
+        r#try!(term.write_line(&format!("{}", game.pos)));
+        r#try!(term.write_line(&format!(
             "Time: (Black) {}s, (White) {}s",
             game.time.black_time().as_secs(),
             game.time.white_time().as_secs()
         )));
-        try!(term.write_line(&format!(
+        r#try!(term.write_line(&format!(
             "Score (Black) {}, (White) {}",
             self.black_score.load(Ordering::Relaxed),
             self.white_score.load(Ordering::Relaxed)
@@ -64,7 +64,7 @@ impl BoardReporter {
         let term = Term::stderr();
 
         if self.dirty {
-            try!(term.clear_last_lines(27));
+            r#try!(term.clear_last_lines(27));
             self.dirty = false;
         }
 
@@ -75,7 +75,7 @@ impl BoardReporter {
             }
             None => format!("Draw({:?})", reason),
         };
-        try!(term.write_line(&format!(
+        r#try!(term.write_line(&format!(
             "[{}/{}] {}",
             stats.finished_games() + 1,
             stats.total_games(),

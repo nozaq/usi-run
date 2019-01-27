@@ -3,8 +3,8 @@ use csa::{Action, Color, GameRecord, MoveRecord, PieceType, Square, Time};
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use shogi;
 
-use environment::{Event, GameOverReason};
-use stats::MatchStatistics;
+use crate::environment::{Event, GameOverReason};
+use crate::stats::MatchStatistics;
 
 use super::Reporter;
 
@@ -62,14 +62,12 @@ fn convert_move_to_action(c: shogi::Color, m: &shogi::MoveRecord) -> Action {
                 convert_pt(pt),
             )
         }
-        shogi::MoveRecord::Drop { to, piece: pc } => {
-            Action::Move(
-                convert_color(c),
-                Square::new(0, 0),
-                Square::new(to.file() + 1, to.rank() + 1),
-                convert_pt(pc.piece_type),
-            )
-        }
+        shogi::MoveRecord::Drop { to, piece: pc } => Action::Move(
+            convert_color(c),
+            Square::new(0, 0),
+            Square::new(to.file() + 1, to.rank() + 1),
+            convert_pt(pc.piece_type),
+        ),
     }
 }
 
