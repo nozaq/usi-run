@@ -1,53 +1,49 @@
+<a name="unreleased"></a>
+## [Unreleased]
+
+### Fix
+- add Cargo.toml
+
+### Refactor
+- migrate to 2018 edition
+
+
 <a name="0.5.0"></a>
-##  (2017-06-25)
+## [0.5.0] - 2017-06-25
+### Feat
+- implement CSA display mode
 
-
-#### Features
-
-*   implement CSA display mode ([efa2f10b](efa2f10b))
+### Fix
+- Coveralls integration
 
 
 <a name="0.4.0"></a>
-## 0.4.0 (2017-05-14)
+## [0.4.0] - 2017-05-14
+### Refactor
+- update shogi crate to 0.7.0
 
-* update dependencies
-
-
-<a name="0.3.0"></a>
-## 0.3.0 (2017-05-09)
-
-
-#### Features
-
-*   improve progress reporting
 
 <a name="0.2.2"></a>
-## 0.2.2 (2017-03-05)
-
-
-#### Performance
-
-*   add profiles for test/release targets ([93dffd87](93dffd87))
-
-
+## [0.2.2] - 2017-03-05
 
 <a name="0.2.1"></a>
-## 0.2.1 (2017-03-05)
-
-
-#### Performance
-
-*   use shogi-rs:0.6.0 for better performance ([e2daf7f1](e2daf7f1))
-
+## [0.2.1] - 2017-03-05
+### Refactor
+- use shogi-rs:0.6.0 for better performance ([#2](https://github.com/nozaq/shogi-rs/issues/2))
 
 
 <a name="0.2.0"></a>
-## 0.2.0 (2017-02-22)
+## [0.2.0] - 2017-02-22
+### Feat
+- support "bestmove win" command
 
 
-#### Features
+<a name="0.1.0"></a>
+## 0.1.0 - 2017-02-21
 
-*   support "bestmove win" command ([6a350b08](6a350b08))
-
-
-
+[Unreleased]: https://github.com/nozaq/shogi-rs/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/nozaq/shogi-rs/compare/0.4.0...0.5.0
+[0.4.0]: https://github.com/nozaq/shogi-rs/compare/0.2.2...0.4.0
+[0.2.2]: https://github.com/nozaq/shogi-rs/compare/0.2.1...0.2.2
+[0.2.1]: https://github.com/nozaq/shogi-rs/compare/0.2.0...0.2.1
+[0.2.0]: https://github.com/nozaq/shogi-rs/compare/0.1.0...0.2.0
