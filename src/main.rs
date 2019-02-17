@@ -1,11 +1,3 @@
-mod config;
-mod environment;
-mod error;
-mod game;
-mod player;
-mod reporter;
-mod stats;
-
 use clap::{crate_version, App, Arg};
 use shogi::bitboard::Factory;
 use shogi::Color;
@@ -13,13 +5,13 @@ use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use crate::error::Error;
-use config::*;
-use environment::*;
-use game::*;
-use player::*;
-use reporter::{BoardReporter, CsaReporter, Reporter, SimpleReporter, UsiReporter};
-use stats::*;
+use usi_run::error::Error;
+use usi_run::config::*;
+use usi_run::environment::*;
+use usi_run::game::*;
+use usi_run::player::*;
+use usi_run::reporter::{BoardReporter, CsaReporter, Reporter, SimpleReporter, UsiReporter};
+use usi_run::stats::*;
 
 const DEFAULT_SFEN: &'static str = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - \
                                     1";

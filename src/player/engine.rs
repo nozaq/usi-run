@@ -12,7 +12,7 @@ use super::reader::*;
 use super::writer::*;
 use crate::environment::*;
 use crate::error::Error;
-use crate::EngineConfig;
+use crate::config::EngineConfig;
 
 pub struct UsiEngine {
     pub color: Color,
