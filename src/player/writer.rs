@@ -18,8 +18,8 @@ impl<T: Write> GuiCommandWriter<T> {
 
     pub fn send(&mut self, command: &GuiCommand) -> Result<String, Error> {
         let s = format!("{}\n", command);
-        r#try!(self.writer.write_all(&s.as_bytes()));
-        r#try!(self.writer.flush());
+        self.writer.write_all(&s.as_bytes())?;
+        self.writer.flush()?;
 
         for f in self.subscribers.iter_mut() {
             f(command, s.as_str());

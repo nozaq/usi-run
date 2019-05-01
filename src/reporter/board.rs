@@ -30,26 +30,26 @@ impl BoardReporter {
         let term = Term::stderr();
 
         if self.dirty {
-            r#try!(term.clear_last_lines(27));
+            term.clear_last_lines(27)?;
             self.dirty = false;
         }
 
-        r#try!(term.write_line(&format!(
+        term.write_line(&format!(
             "[{}/{}] Playing...",
             stats.finished_games() + 1,
             stats.total_games()
-        )));
-        r#try!(term.write_line(&format!("{}", game.pos)));
-        r#try!(term.write_line(&format!(
+        ))?;
+        term.write_line(&format!("{}", game.pos))?;
+        term.write_line(&format!(
             "Time: (Black) {}s, (White) {}s",
             game.time.black_time().as_secs(),
             game.time.white_time().as_secs()
-        )));
-        r#try!(term.write_line(&format!(
+        ))?;
+        term.write_line(&format!(
             "Score (Black) {}, (White) {}",
             self.black_score.load(Ordering::Relaxed),
             self.white_score.load(Ordering::Relaxed)
-        )));
+        ))?;
         self.dirty = true;
 
         Ok(())
@@ -64,7 +64,7 @@ impl BoardReporter {
         let term = Term::stderr();
 
         if self.dirty {
-            r#try!(term.clear_last_lines(27));
+            term.clear_last_lines(27)?;
             self.dirty = false;
         }
 
@@ -75,12 +75,12 @@ impl BoardReporter {
             }
             None => format!("Draw({:?})", reason),
         };
-        r#try!(term.write_line(&format!(
+        term.write_line(&format!(
             "[{}/{}] {}",
             stats.finished_games() + 1,
             stats.total_games(),
             result
-        )));
+        ))?;
 
         Ok(())
     }

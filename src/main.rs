@@ -83,8 +83,8 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
     let (white_tx, white_rx) = channel();
     let (monitor_tx, monitor_rx) = channel();
 
-    let mut black_engine = r#try!(UsiEngine::launch(Color::Black, &config.black_engine));
-    let mut white_engine = r#try!(UsiEngine::launch(Color::White, &config.white_engine));
+    let mut black_engine = UsiEngine::launch(Color::Black, &config.black_engine)?;
+    let mut white_engine = UsiEngine::launch(Color::White, &config.white_engine)?;
 
     let reporter: Arc<Mutex<Reporter + Send + Sync>> = match config.display {
         DisplayMode::Board => Arc::new(Mutex::new(BoardReporter::new(
@@ -107,15 +107,15 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
         let mut game = Game::new(config.time.to_time_control().clone());
         game.black_player = black_engine.name.to_string();
         game.white_player = white_engine.name.to_string();
-        r#try!(game
+        game
             .pos
-            .set_sfen(config.initial_pos.as_ref().map_or(DEFAULT_SFEN, |v| v,)));
+            .set_sfen(config.initial_pos.as_ref().map_or(DEFAULT_SFEN, |v| v,))?;
 
-        r#try!(env.start_game(game, &[&black_tx, &white_tx, &monitor_tx]));
+        env.start_game(game, &[&black_tx, &white_tx, &monitor_tx])?;
     }
 
-    r#try!(black_engine.kill());
-    r#try!(white_engine.kill());
+    black_engine.kill()?;
+    white_engine.kill()?;
 
     let stats = monitor_handle
         .join()

@@ -122,9 +122,9 @@ pub struct MatchConfig {
 
 impl MatchConfig {
     pub fn load(&mut self, config_path: &str) -> Result<(), Error> {
-        let mut f = r#try!(File::open(config_path));
+        let mut f = File::open(config_path)?;
         let mut buf = String::new();
-        r#try!(f.read_to_string(&mut buf));
+        f.read_to_string(&mut buf)?;
 
         let value = buf.parse::<Value>().unwrap();
 
