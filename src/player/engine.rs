@@ -30,11 +30,11 @@ pub struct UsiEngine {
 
 impl UsiEngine {
     pub fn launch(color: Color, config: &EngineConfig) -> Result<UsiEngine, Error> {
-        let mut process = r#try!(Command::new(&config.engine_path)
+        let mut process = Command::new(&config.engine_path)
             .current_dir(&config.working_dir)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn());
+            .spawn()?;
 
         let stdin = process.stdin.take().unwrap();
         let stdout = process.stdout.take().unwrap();
@@ -44,9 +44,9 @@ impl UsiEngine {
 
         let mut engine_name = String::new();
         let mut opts = HashMap::new();
-        r#try!(w.send(&GuiCommand::Usi));
+        w.send(&GuiCommand::Usi)?;
         loop {
-            let output = r#try!(r.next());
+            let output = r.next()?;
             match *output.response() {
                 Some(EngineCommand::Id(IdParams::Name(ref name))) => {
                     engine_name = name.to_string();
@@ -92,17 +92,17 @@ impl UsiEngine {
         }
 
         for (name, value) in &opts {
-            r#try!(w.send(&GuiCommand::SetOption(
+            w.send(&GuiCommand::SetOption(
                 name.to_string(),
-                Some(value.to_string())
-            )));
+                Some(value.to_string()),
+            ))?;
         }
 
         if config.ponder {
-            r#try!(w.send(&GuiCommand::SetOption(
+            w.send(&GuiCommand::SetOption(
                 "USI_Ponder".to_string(),
-                Some(config.ponder.to_string())
-            )));
+                Some(config.ponder.to_string()),
+            ))?;
         }
 
         Ok(UsiEngine {
@@ -156,7 +156,7 @@ impl UsiEngine {
                     Ok(output) => {
                         match *output.response() {
                             Some(EngineCommand::ReadyOk) => {
-                                r#try!(action_out.send(Action::Ready(color)));
+                                action_out.send(Action::Ready(color))?;
                             }
                             Some(EngineCommand::BestMove(BestMoveParams::MakeMove(
                                 ref best_move_sfen,
@@ -164,7 +164,7 @@ impl UsiEngine {
                             ))) => {
                                 if let Some(pending) = pending.lock().ok() {
                                     if let Some(_) = *pending {
-                                        r#try!(action_out.send(Action::RequestState));
+                                        action_out.send(Action::RequestState)?;
                                         continue;
                                     }
                                 }
@@ -181,20 +181,20 @@ impl UsiEngine {
                                 }
 
                                 if let Some(best_move) = Move::from_sfen(best_move_sfen) {
-                                    r#try!(action_out.send(Action::MakeMove(
+                                    action_out.send(Action::MakeMove(
                                         color,
                                         best_move,
-                                        *output.timestamp()
-                                    )));
+                                        *output.timestamp(),
+                                    ))?;
                                 } else {
                                     return Err(Error::Sfen(SfenError {}));
                                 }
                             }
                             Some(EngineCommand::BestMove(BestMoveParams::Resign)) => {
-                                r#try!(action_out.send(Action::Resign(color)));
+                                action_out.send(Action::Resign(color))?;
                             }
                             Some(EngineCommand::BestMove(BestMoveParams::Win)) => {
-                                r#try!(action_out.send(Action::DeclareWinning(color)));
+                                action_out.send(Action::DeclareWinning(color))?;
                             }
                             Some(EngineCommand::Info(ref v)) => {
                                 if let Some(score_entry) = v.iter().find(|item| match *item {
@@ -245,7 +245,7 @@ impl UsiEngine {
             let mut hook = hook.lock().unwrap();
 
             let mut write = |cmd: &GuiCommand| -> Result<(), Error> {
-                let s = r#try!(writer.send(cmd));
+                let s = writer.send(cmd)?;
                 if let Some(ref mut f) = *hook {
                     f(cmd, &s);
                 }
@@ -255,11 +255,11 @@ impl UsiEngine {
             while let Some(event) = event_in.recv().ok() {
                 match event {
                     Event::IsReady => {
-                        r#try!(write(&GuiCommand::IsReady));
+                        write(&GuiCommand::IsReady)?;
                     }
                     Event::NewGame(_) => {
                         score.store(0, Ordering::Relaxed);
-                        r#try!(write(&GuiCommand::UsiNewGame));
+                        write(&GuiCommand::UsiNewGame)?;
                     }
                     Event::NewTurn(shared_game, _) => {
                         if let Some(game) = shared_game.read().ok() {
@@ -268,10 +268,10 @@ impl UsiEngine {
                                     if let Some(ponder_move) = *guard {
                                         if let Some(last) = game.pos.move_history().last() {
                                             if *last == ponder_move {
-                                                r#try!(write(&GuiCommand::Ponderhit));
+                                                write(&GuiCommand::Ponderhit)?;
                                                 continue;
                                             } else {
-                                                r#try!(write(&GuiCommand::Stop));
+                                                write(&GuiCommand::Stop)?;
 
                                                 if let Some(mut guard2) = pending.lock().ok() {
                                                     *guard2 = Some(());
@@ -284,19 +284,19 @@ impl UsiEngine {
                                 }
 
                                 let sfen = game.pos.to_sfen();
-                                r#try!(write(&GuiCommand::Position(sfen)));
-                                r#try!(write(&GuiCommand::Go(build_think_params(&game.time))));
+                                write(&GuiCommand::Position(sfen))?;
+                                write(&GuiCommand::Go(build_think_params(&game.time)))?;
                             } else {
                                 if let Some(guard) = pondering.lock().ok() {
                                     if let Some(ponder_move) = *guard {
                                         let sfen = game.pos.to_sfen();
-                                        r#try!(write(&GuiCommand::Position(format!(
+                                        write(&GuiCommand::Position(format!(
                                             "{} {}",
                                             sfen, ponder_move
-                                        ))));
-                                        r#try!(write(&GuiCommand::Go(
+                                        )))?;
+                                        write(&GuiCommand::Go(
                                             build_think_params(&game.time).ponder()
-                                        )));
+                                        ))?;
                                     }
                                 }
                             }
@@ -308,8 +308,8 @@ impl UsiEngine {
                                 if let Some(mut data) = pending.lock().ok() {
                                     *data = None;
                                     let sfen = game.pos.to_sfen();
-                                    r#try!(write(&GuiCommand::Position(sfen.to_string())));
-                                    r#try!(write(&GuiCommand::Go(build_think_params(&game.time))));
+                                    write(&GuiCommand::Position(sfen.to_string()))?;
+                                    write(&GuiCommand::Go(build_think_params(&game.time)))?;
                                 }
                             }
                         }
@@ -320,8 +320,8 @@ impl UsiEngine {
                             Some(_) => GameOverKind::Lose,
                             None => GameOverKind::Draw,
                         };
-                        r#try!(write(&GuiCommand::Stop));
-                        r#try!(write(&GuiCommand::GameOver(result)));
+                        write(&GuiCommand::Stop)?;
+                        write(&GuiCommand::GameOver(result))?;
                     }
                 }
             }

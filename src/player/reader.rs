@@ -53,7 +53,7 @@ impl<T: Read> EngineCommandReader<T> {
         let mut buf = String::new();
 
         loop {
-            let bytes_read = r#try!(self.receive.read_line(&mut buf));
+            let bytes_read = self.receive.read_line(&mut buf)?;
             if bytes_read == 0 {
                 return Ok(EngineOutput {
                     response: None,
@@ -68,7 +68,7 @@ impl<T: Read> EngineCommandReader<T> {
             buf.clear();
         }
 
-        let res = r#try!(EngineCommand::parse(&buf));
+        let res = EngineCommand::parse(&buf)?;
         Ok(EngineOutput {
             response: Some(res),
             raw_str: buf,
