@@ -98,7 +98,7 @@ impl Environment {
                             break;
                         }
 
-                        match game.pos.make_move(m) {
+                        match game.pos.make_move(*m) {
                             Ok(_) => {
                                 if let Some(max_ply) = self.max_ply {
                                     if game.pos.ply() >= max_ply {
