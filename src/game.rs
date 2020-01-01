@@ -1,5 +1,5 @@
-use std::time::Instant;
 use shogi::{Position, TimeControl};
+use std::time::Instant;
 
 #[derive(Debug)]
 pub struct Game {

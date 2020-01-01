@@ -295,7 +295,7 @@ impl UsiEngine {
                                             sfen, ponder_move
                                         )))?;
                                         write(&GuiCommand::Go(
-                                            build_think_params(&game.time).ponder()
+                                            build_think_params(&game.time).ponder(),
                                         ))?;
                                     }
                                 }

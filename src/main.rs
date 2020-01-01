@@ -107,9 +107,8 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
         let mut game = Game::new(config.time.to_time_control().clone());
         game.black_player = black_engine.name.to_string();
         game.white_player = white_engine.name.to_string();
-        game
-            .pos
-            .set_sfen(config.initial_pos.as_ref().map_or(DEFAULT_SFEN, |v| v,))?;
+        game.pos
+            .set_sfen(config.initial_pos.as_ref().map_or(DEFAULT_SFEN, |v| v))?;
 
         env.start_game(game, &[&black_tx, &white_tx, &monitor_tx])?;
     }

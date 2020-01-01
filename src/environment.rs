@@ -136,20 +136,14 @@ impl Environment {
                             break;
                         }
 
-                        transmit(&Event::GameOver(
-                            Some(c.flip()),
-                            GameOverReason::Resign
-                        ),)?;
+                        transmit(&Event::GameOver(Some(c.flip()), GameOverReason::Resign))?;
                         break;
                     }
                 }
                 Action::DeclareWinning(c) => {
                     if let Some(game) = shared_game.read().ok() {
                         if game.pos.try_declare_winning(c) {
-                            transmit(&Event::GameOver(
-                                Some(c),
-                                GameOverReason::DeclareWinning
-                            ),)?;
+                            transmit(&Event::GameOver(Some(c), GameOverReason::DeclareWinning))?;
                         } else {
                             transmit(&Event::GameOver(
                                 Some(c.flip()),
