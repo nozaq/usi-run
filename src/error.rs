@@ -9,7 +9,7 @@ pub enum Error {
     Sfen(SfenError),
     Move(MoveError),
     Io(io::Error),
-    Channel(Box<error::Error + Send + Sync>),
+    Channel(Box<dyn error::Error + Send + Sync>),
     EngineNotResponded,
 }
 
@@ -27,18 +27,7 @@ impl fmt::Display for Error {
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::Usi(ref e) => e.description(),
-            Error::Sfen(ref e) => e.description(),
-            Error::Move(ref e) => e.description(),
-            Error::Io(ref e) => e.description(),
-            Error::Channel(ref e) => e.description(),
-            Error::EngineNotResponded => "the engine did not return 'readyok' command",
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::Usi(ref e) => Some(e),
             Error::Sfen(ref e) => Some(e),

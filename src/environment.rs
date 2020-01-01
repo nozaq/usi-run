@@ -46,8 +46,8 @@ impl Environment {
         let (tx, rx) = channel();
 
         Environment {
-            tx: tx,
-            rx: rx,
+            tx,
+            rx,
             max_ply: None,
         }
     }
@@ -75,33 +75,27 @@ impl Environment {
         self.wait_readyok()?;
         transmit(&Event::NewGame(shared_game.clone()))?;
 
-        if let Some(mut game) = shared_game.write().ok() {
+        if let Ok(mut game) = shared_game.write() {
             game.turn_start_time = Instant::now();
         }
         transmit(&Event::NewTurn(shared_game.clone(), Duration::from_secs(0)))?;
 
-        while let Some(action) = self.rx.recv().ok() {
+        while let Ok(action) = self.rx.recv() {
             match action {
                 Action::RequestState => {
                     transmit(&Event::NotifyState(shared_game.clone()))?;
                 }
                 Action::MakeMove(c, ref m, ref ts) => {
-                    if let Some(mut game) = shared_game.write().ok() {
+                    if let Ok(mut game) = shared_game.write() {
                         if c != game.pos.side_to_move() {
                             transmit(&Event::GameOver(Some(c), GameOverReason::IllegalMove))?;
                             break;
                         }
 
                         let elapsed = ts.duration_since(game.turn_start_time);
-                        match game.time.consume(c, elapsed) {
-                            true => {}
-                            false => {
-                                transmit(&Event::GameOver(
-                                    Some(c.flip()),
-                                    GameOverReason::OutOfTime,
-                                ))?;
-                                break;
-                            }
+                        if !game.time.consume(c, elapsed) {
+                            transmit(&Event::GameOver(Some(c.flip()), GameOverReason::OutOfTime))?;
+                            break;
                         }
 
                         match game.pos.make_move(m) {
@@ -127,7 +121,7 @@ impl Environment {
                     }
                 }
                 Action::Resign(c) => {
-                    if let Some(game) = shared_game.read().ok() {
+                    if let Ok(game) = shared_game.read() {
                         if c != game.pos.side_to_move() {
                             transmit(&Event::GameOver(
                                 Some(c.flip()),
@@ -141,7 +135,7 @@ impl Environment {
                     }
                 }
                 Action::DeclareWinning(c) => {
-                    if let Some(game) = shared_game.read().ok() {
+                    if let Ok(game) = shared_game.read() {
                         if game.pos.try_declare_winning(c) {
                             transmit(&Event::GameOver(Some(c), GameOverReason::DeclareWinning))?;
                         } else {
@@ -163,24 +157,21 @@ impl Environment {
         let mut state = (false, false);
 
         // Currently no timeout value is set for waiting "readyok" command.
-        while let Some(action) = self.rx.recv().ok() {
-            match action {
-                Action::Ready(c) => {
-                    if c == Color::Black {
-                        state.0 = true;
-                    } else {
-                        state.1 = true
-                    }
-
-                    if state.0 && state.1 {
-                        return Ok(());
-                    }
+        while let Ok(action) = self.rx.recv() {
+            if let Action::Ready(c) = action {
+                if c == Color::Black {
+                    state.0 = true;
+                } else {
+                    state.1 = true
                 }
-                _ => { /* ignore other events. */ }
+
+                if state.0 && state.1 {
+                    return Ok(());
+                }
             }
         }
 
-        return Err(Error::EngineNotResponded);
+        Err(Error::EngineNotResponded)
     }
 }
 

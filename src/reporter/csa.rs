@@ -46,8 +46,8 @@ fn convert_move_to_action(c: shogi::Color, m: &shogi::MoveRecord) -> Action {
             from,
             to,
             moved: pc,
-            captured: _,
             promoted,
+            ..
         } => {
             let pt = if promoted {
                 pc.piece_type.promote().unwrap_or(pc.piece_type)
@@ -78,20 +78,20 @@ impl Reporter for CsaReporter {
                 let current_game_num = stats.finished_games() + 1;
                 let num_games = stats.total_games();
 
-                let bar = ProgressBar::new_spinner();
-                bar.set_draw_target(ProgressDrawTarget::stderr());
-                bar.set_style(
+                let pbar = ProgressBar::new_spinner();
+                pbar.set_draw_target(ProgressDrawTarget::stderr());
+                pbar.set_style(
                     ProgressStyle::default_spinner()
                         .tick_chars("|/-\\ ")
                         .template("{prefix:.bold.dim} {spinner} {msg}"),
                 );
-                bar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
-                bar.set_message("Starting...");
-                self.current_bar = Some(bar);
+                pbar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
+                pbar.set_message("Starting...");
+                self.current_bar = Some(pbar);
 
                 self.record = GameRecord::default();
 
-                if let Some(game) = game.read().ok() {
+                if let Ok(game) = game.read() {
                     self.record.black_player = Some(game.black_player.to_string());
                     self.record.white_player = Some(game.white_player.to_string());
                 }
@@ -103,7 +103,7 @@ impl Reporter for CsaReporter {
                 });
             }
             Event::NewTurn(ref game, elapsed) => {
-                if let Some(game) = game.read().ok() {
+                if let Ok(game) = game.read() {
                     if let Some(last_move) = game.pos.move_history().last() {
                         self.record.moves.push(MoveRecord {
                             action: convert_move_to_action(
@@ -114,11 +114,8 @@ impl Reporter for CsaReporter {
                         });
                     }
 
-                    match self.current_bar {
-                        Some(ref bar) => {
-                            bar.set_message(&format!("Move #{}", game.pos.ply()));
-                        }
-                        None => {}
+                    if let Some(ref pbar) = self.current_bar {
+                        pbar.set_message(&format!("Move #{}", game.pos.ply()));
                     }
                 }
             }
@@ -138,11 +135,8 @@ impl Reporter for CsaReporter {
                     time: Some(now.time()),
                 });
 
-                match self.current_bar {
-                    Some(ref bar) => {
-                        bar.finish_and_clear();
-                    }
-                    None => {}
+                if let Some(ref pbar) = self.current_bar {
+                    pbar.finish_and_clear();
                 }
 
                 if stats.finished_games() > 1 {
