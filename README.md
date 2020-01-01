@@ -1,7 +1,6 @@
 # usi-run
 
-[![Build Status](https://travis-ci.org/nozaq/usi-run.svg?branch=master)](https://travis-ci.org/nozaq/usi-run)
-[![Build status](https://ci.appveyor.com/api/projects/status/glvdcd6tdohmmhrl?svg=true)](https://ci.appveyor.com/project/nozaq/usi-run)
+[![Github Actions](https://github.com/nozaq/usi-run/workflows/build/badge.svg)](https://github.com/nozaq/usi-run/actions?workflow=build)
 [![Coverage Status](https://coveralls.io/repos/github/nozaq/usi-run/badge.svg?branch=master)](https://coveralls.io/github/nozaq/usi-run?branch=master)
 [![crates.io](https://img.shields.io/crates/v/usi-run.svg)](https://crates.io/crates/usi-run)
 
