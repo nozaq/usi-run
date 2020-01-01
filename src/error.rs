@@ -1,6 +1,6 @@
+use shogi::{MoveError, SfenError};
+use std::sync::mpsc::{RecvError, SendError};
 use std::{error, fmt, io};
-use std::sync::mpsc::{SendError, RecvError};
-use shogi::{SfenError, MoveError};
 use usi;
 
 #[derive(Debug)]
@@ -51,7 +51,8 @@ impl error::Error for Error {
 }
 
 impl<T> From<SendError<T>> for Error
-    where T: Send + Sync + 'static
+where
+    T: Send + Sync + 'static,
 {
     fn from(err: SendError<T>) -> Error {
         Error::Channel(Box::new(err))
