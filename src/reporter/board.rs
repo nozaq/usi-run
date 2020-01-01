@@ -19,11 +19,11 @@ pub struct BoardReporter {
 
 impl BoardReporter {
     pub fn new(black_score: Arc<AtomicIsize>, white_score: Arc<AtomicIsize>) -> BoardReporter {
-        return BoardReporter {
+        BoardReporter {
             dirty: false,
             black_score,
             white_score,
-        };
+        }
     }
 
     fn on_new_turn(&mut self, game: &Game, stats: &MatchStatistics) -> std::io::Result<()> {
@@ -90,7 +90,7 @@ impl Reporter for BoardReporter {
     fn on_game_event(&mut self, event: &Event, stats: &MatchStatistics) {
         match *event {
             Event::NewTurn(ref game, _) => {
-                if let Some(game) = game.read().ok() {
+                if let Ok(game) = game.read() {
                     self.on_new_turn(&game, stats).unwrap();
                 }
             }

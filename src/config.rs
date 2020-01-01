@@ -82,7 +82,7 @@ impl TimeControlConfig {
             TimeControl::Byoyomi {
                 black_time: self.black_time,
                 white_time: self.white_time,
-                byoyomi: byoyomi,
+                byoyomi,
             }
         } else {
             TimeControl::FischerClock {

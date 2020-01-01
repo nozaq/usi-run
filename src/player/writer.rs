@@ -5,13 +5,13 @@ use crate::error::Error;
 
 pub struct GuiCommandWriter<T: Write> {
     writer: T,
-    subscribers: Vec<Box<FnMut(&GuiCommand, &str) + Send + Sync>>,
+    subscribers: Vec<Box<dyn FnMut(&GuiCommand, &str) + Send + Sync>>,
 }
 
 impl<T: Write> GuiCommandWriter<T> {
     pub fn new(writer: T) -> GuiCommandWriter<T> {
         GuiCommandWriter {
-            writer: writer,
+            writer,
             subscribers: Default::default(),
         }
     }

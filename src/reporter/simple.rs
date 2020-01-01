@@ -18,29 +18,26 @@ impl Reporter for SimpleReporter {
                 let current_game_num = stats.finished_games() + 1;
                 let num_games = stats.total_games();
 
-                let bar = ProgressBar::new_spinner();
-                bar.set_draw_target(ProgressDrawTarget::stderr());
-                bar.set_style(
+                let pbar = ProgressBar::new_spinner();
+                pbar.set_draw_target(ProgressDrawTarget::stderr());
+                pbar.set_style(
                     ProgressStyle::default_spinner()
                         .tick_chars("|/-\\ ")
                         .template("{prefix:.bold.dim} {spinner} {msg}"),
                 );
-                bar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
-                bar.set_message("Starting...");
-                self.current_bar = Some(bar);
+                pbar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
+                pbar.set_message("Starting...");
+                self.current_bar = Some(pbar);
             }
             Event::NewTurn(ref game, _) => {
-                if let Some(game) = game.read().ok() {
-                    match self.current_bar {
-                        Some(ref bar) => {
-                            bar.set_message(&format!("Move #{}", game.pos.ply()));
-                        }
-                        None => {}
+                if let Ok(game) = game.read() {
+                    if let Some(ref pbar) = self.current_bar {
+                        pbar.set_message(&format!("Move #{}", game.pos.ply()));
                     }
                 }
             }
-            Event::GameOver(winner, reason) => match self.current_bar {
-                Some(ref bar) => {
+            Event::GameOver(winner, reason) => {
+                if let Some(ref pbar) = self.current_bar {
                     let result = match winner {
                         Some(c) => {
                             let name = if c == Color::Black { "Black" } else { "White" };
@@ -48,10 +45,9 @@ impl Reporter for SimpleReporter {
                         }
                         None => format!("Draw({:?})", reason),
                     };
-                    bar.finish_with_message(&result);
+                    pbar.finish_with_message(&result);
                 }
-                None => {}
-            },
+            }
             _ => {}
         }
     }

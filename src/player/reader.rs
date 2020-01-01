@@ -26,7 +26,7 @@ impl EngineOutput {
 
 pub struct EngineCommandReader<T: Read> {
     receive: BufReader<T>,
-    subscribers: Vec<Box<FnMut(&EngineOutput) + Send + Sync>>,
+    subscribers: Vec<Box<dyn FnMut(&EngineOutput) + Send + Sync>>,
 }
 
 impl<T: Read> EngineCommandReader<T> {
