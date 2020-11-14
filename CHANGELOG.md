@@ -1,6 +1,23 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="0.8.0"></a>
+## [0.8.0] - 2020-11-14
+### Fix
+- clippy warnings
+
+
+<a name="0.7.0"></a>
+## [0.7.0] - 2020-01-01
+### Refactor
+- cargo clippy
+- cargo fmt
+- use ? instead of r#try
+
+
+<a name="0.6.0"></a>
+## [0.6.0] - 2019-01-27
 ### Fix
 - add Cargo.toml
 
@@ -41,7 +58,10 @@
 <a name="0.1.0"></a>
 ## 0.1.0 - 2017-02-21
 
-[Unreleased]: https://github.com/nozaq/shogi-rs/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/nozaq/shogi-rs/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/nozaq/shogi-rs/compare/0.7.0...0.8.0
+[0.7.0]: https://github.com/nozaq/shogi-rs/compare/0.6.0...0.7.0
+[0.6.0]: https://github.com/nozaq/shogi-rs/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/nozaq/shogi-rs/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/nozaq/shogi-rs/compare/0.2.2...0.4.0
 [0.2.2]: https://github.com/nozaq/shogi-rs/compare/0.2.1...0.2.2
