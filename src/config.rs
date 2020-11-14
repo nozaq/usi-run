@@ -88,8 +88,8 @@ impl TimeControlConfig {
             TimeControl::FischerClock {
                 black_time: self.black_time,
                 white_time: self.white_time,
-                black_inc: self.black_inc.unwrap_or(Duration::from_secs(0)),
-                white_inc: self.white_inc.unwrap_or(Duration::from_secs(0)),
+                black_inc: self.black_inc.unwrap_or_else(|| Duration::from_secs(0)),
+                white_inc: self.white_inc.unwrap_or_else(|| Duration::from_secs(0)),
             }
         }
     }

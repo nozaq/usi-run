@@ -1,5 +1,4 @@
 use console::Term;
-use std;
 use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::Arc;
 

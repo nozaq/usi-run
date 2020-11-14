@@ -1,7 +1,6 @@
 use chrono::Local;
 use csa::{Action, Color, GameRecord, MoveRecord, PieceType, Square, Time};
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
-use shogi;
 
 use crate::environment::{Event, GameOverReason};
 use crate::stats::MatchStatistics;

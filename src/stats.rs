@@ -11,9 +11,10 @@ pub struct MatchStatistics {
 
 impl MatchStatistics {
     pub fn new(num_games: u32) -> MatchStatistics {
-        let mut stats = MatchStatistics::default();
-        stats.total_games = num_games;
-        stats
+        MatchStatistics {
+            total_games: num_games,
+            ..MatchStatistics::default()
+        }
     }
 
     pub fn black_wins(&self) -> u32 {
