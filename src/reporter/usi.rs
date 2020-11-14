@@ -1,5 +1,4 @@
 use shogi::Color;
-use std;
 use std::io::Write;
 use usi::GuiCommand;
 

@@ -89,23 +89,24 @@ mod tests {
         let mut reader = EngineCommandReader::new(buf.as_bytes());
 
         let output = reader.next().expect("failed to read the output");
-        match *output.response() {
-            Some(EngineCommand::UsiOk) => assert!(true),
-            ref r => unreachable!("unexpected {:?}", r),
+
+        if !matches!(*output.response(), Some(EngineCommand::UsiOk)) {
+            unreachable!("unexpected {:?}", output.response());
         }
         assert_eq!("usiok\n", output.raw_str());
 
         let output = reader.next().expect("failed to read the output");
-        match *output.response() {
-            Some(EngineCommand::ReadyOk) => assert!(true),
-            ref r => unreachable!("unexpected {:?}", r),
+        if !matches!(*output.response(), Some(EngineCommand::ReadyOk)) {
+            unreachable!("unexpected {:?}", output.response());
         }
         assert_eq!("     readyok\n", output.raw_str());
 
         let output = reader.next().expect("failed to read the output");
-        match *output.response() {
-            Some(EngineCommand::BestMove(BestMoveParams::MakeMove(_, None))) => assert!(true),
-            ref r => unreachable!("unexpected {:?}", r),
+        if !matches!(
+            *output.response(),
+            Some(EngineCommand::BestMove(BestMoveParams::MakeMove(_, None)))
+        ) {
+            unreachable!("unexpected {:?}", output.response());
         }
         assert_eq!("  bestmove 5e5f\n", output.raw_str());
     }

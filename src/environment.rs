@@ -190,46 +190,46 @@ mod tests {
         let (white_tx, white_rx) = channel();
 
         thread::spawn(move || {
-            assert!(match black_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::IsReady) => true,
-                _ => false,
-            });
-            assert!(match white_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::IsReady) => true,
-                _ => false,
-            });
+            assert!(matches!(
+                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::IsReady)
+            ));
+            assert!(matches!(
+                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::IsReady)
+            ));
 
             assert!(tx.send(Action::Ready(Color::Black)).is_ok());
             assert!(tx.send(Action::Ready(Color::White)).is_ok());
 
-            assert!(match black_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::NewGame(_)) => true,
-                _ => false,
-            });
-            assert!(match white_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::NewGame(_)) => true,
-                _ => false,
-            });
+            assert!(matches!(
+                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::NewGame(_))
+            ));
+            assert!(matches!(
+                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::NewGame(_))
+            ));
 
-            assert!(match black_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::NewTurn(_, _)) => true,
-                _ => false,
-            });
-            assert!(match white_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::NewTurn(_, _)) => true,
-                _ => false,
-            });
+            assert!(matches!(
+                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::NewTurn(_, _))
+            ));
+            assert!(matches!(
+                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::NewTurn(_, _))
+            ));
 
             assert!(tx.send(Action::Resign(Color::Black)).is_ok());
 
-            assert!(match black_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::GameOver(Some(Color::White), _)) => true,
-                _ => false,
-            });
-            assert!(match white_rx.recv_timeout(Duration::from_secs(1)).ok() {
-                Some(Event::GameOver(Some(Color::White), _)) => true,
-                _ => false,
-            });
+            assert!(matches!(
+                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::GameOver(Some(Color::White), _))
+            ));
+            assert!(matches!(
+                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
+                Some(Event::GameOver(Some(Color::White), _))
+            ));
         });
 
         let tc = TimeControl::Byoyomi {
@@ -238,7 +238,7 @@ mod tests {
             byoyomi: Duration::from_millis(100),
         };
 
-        let game = Game::new(tc.clone());
+        let game = Game::new(tc);
         let res = env.start_game(game, &[&black_tx, &white_tx]);
         assert!(res.is_ok());
     }

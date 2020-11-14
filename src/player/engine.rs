@@ -200,10 +200,10 @@ impl UsiEngine {
                                 action_out.send(Action::DeclareWinning(color))?;
                             }
                             Some(EngineCommand::Info(ref v)) => {
-                                if let Some(score_entry) = v.iter().find(|item| match *(*item) {
-                                    InfoParams::Score(_, _) => true,
-                                    _ => false,
-                                }) {
+                                if let Some(score_entry) = v
+                                    .iter()
+                                    .find(|item| matches!(*(*item), InfoParams::Score(_, _)))
+                                {
                                     if let InfoParams::Score(val, ScoreKind::CpExact) = *score_entry
                                     {
                                         score.store(val as isize, Ordering::Relaxed)
