@@ -100,7 +100,7 @@ fn run_match(config: &MatchConfig) -> Result<MatchStatistics, Error> {
     black_engine.listen(env.new_sender(), black_rx);
     white_engine.listen(env.new_sender(), white_rx);
 
-    let monitor_handle = start_monitor_thread(&config, monitor_rx, reporter.clone());
+    let monitor_handle = start_monitor_thread(config, monitor_rx, reporter.clone());
 
     for _ in 0..config.num_games {
         let mut game = Game::new(config.time.to_time_control());
@@ -161,13 +161,13 @@ fn set_command_logger(
         read_reporter
             .lock()
             .unwrap()
-            .on_receive_command(color, &output);
+            .on_receive_command(color, output);
     })));
 
     engine.set_write_hook(Some(Box::new(move |command, raw_str| {
         write_reporter
             .lock()
             .unwrap()
-            .on_send_command(color, &command, raw_str);
+            .on_send_command(color, command, raw_str);
     })));
 }
