@@ -143,15 +143,15 @@ impl MatchConfig {
             .map(|v| v.to_string());
 
         if let Some(black) = value.get("black") {
-            self.black_engine.merge(&black);
+            self.black_engine.merge(black);
         }
 
         if let Some(white) = value.get("white") {
-            self.white_engine.merge(&white);
+            self.white_engine.merge(white);
         }
 
         if let Some(time_control) = value.get("time_control") {
-            self.time.merge(&time_control);
+            self.time.merge(time_control);
         }
 
         Ok(())

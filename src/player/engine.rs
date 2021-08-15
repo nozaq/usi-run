@@ -200,14 +200,11 @@ impl UsiEngine {
                                 action_out.send(Action::DeclareWinning(color))?;
                             }
                             Some(EngineCommand::Info(ref v)) => {
-                                if let Some(score_entry) = v
+                                if let Some(InfoParams::Score(val, ScoreKind::CpExact)) = v
                                     .iter()
                                     .find(|item| matches!(*(*item), InfoParams::Score(_, _)))
                                 {
-                                    if let InfoParams::Score(val, ScoreKind::CpExact) = *score_entry
-                                    {
-                                        score.store(val as isize, Ordering::Relaxed)
-                                    }
+                                    score.store(*val as isize, Ordering::Relaxed)
                                 }
                             }
                             _ => {}
@@ -270,16 +267,14 @@ impl UsiEngine {
                                         if let Some(last) = game.pos.move_history().last() {
                                             if *last == ponder_move {
                                                 write(&GuiCommand::Ponderhit)?;
-                                                continue;
                                             } else {
                                                 write(&GuiCommand::Stop)?;
 
                                                 if let Ok(mut guard2) = pending.lock() {
                                                     *guard2 = Some(());
                                                 }
-
-                                                continue;
                                             }
+                                            continue;
                                         }
                                     }
                                 }
