@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="0.8.1"></a>
+## [0.8.1] - 2021-08-15
+### Refactor
+- fix clippy warnings
+- update dependencies
+
+
 <a name="0.8.0"></a>
 ## [0.8.0] - 2020-11-14
 ### Fix
@@ -58,7 +65,8 @@
 <a name="0.1.0"></a>
 ## 0.1.0 - 2017-02-21
 
-[Unreleased]: https://github.com/nozaq/shogi-rs/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/nozaq/shogi-rs/compare/0.8.1...HEAD
+[0.8.1]: https://github.com/nozaq/shogi-rs/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/nozaq/shogi-rs/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/nozaq/shogi-rs/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/nozaq/shogi-rs/compare/0.5.0...0.6.0
