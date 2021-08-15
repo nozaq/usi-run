@@ -13,12 +13,12 @@ edition = "2018"
 [dependencies]
 chrono = "0.4"
 clap = "2"
-csa = "0.4"
+csa = "0.6"
 indicatif = "0.11"
 console = "0.9"
-shogi = "0.9"
+shogi = "0.10"
 toml = "0.5"
-usi = "0.3"
+usi = "0.4"
 
 [badges]
 travis-ci = { repository = "nozaq/usi-run" }

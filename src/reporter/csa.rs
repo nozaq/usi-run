@@ -44,7 +44,7 @@ fn convert_move_to_action(c: shogi::Color, m: &shogi::MoveRecord) -> Action {
         shogi::MoveRecord::Normal {
             from,
             to,
-            moved: pc,
+            placed: pc,
             promoted,
             ..
         } => {
