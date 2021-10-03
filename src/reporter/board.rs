@@ -1,31 +1,45 @@
 use console::Term;
-use std::sync::atomic::{AtomicIsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::environment::Event;
 use crate::stats::MatchStatistics;
 use shogi::Color;
 
 use super::Reporter;
-use crate::environment::GameOverReason;
-use crate::game::Game;
+use crate::engine::ThinkState;
+use crate::game::{Game, GameOverReason};
 
 pub struct BoardReporter {
     dirty: bool,
-    black_score: Arc<AtomicIsize>,
-    white_score: Arc<AtomicIsize>,
+    black_state: Arc<RwLock<ThinkState>>,
+    white_state: Arc<RwLock<ThinkState>>,
 }
 
 impl BoardReporter {
-    pub fn new(black_score: Arc<AtomicIsize>, white_score: Arc<AtomicIsize>) -> BoardReporter {
+    pub fn new(
+        black_state: Arc<RwLock<ThinkState>>,
+        white_state: Arc<RwLock<ThinkState>>,
+    ) -> BoardReporter {
         BoardReporter {
             dirty: false,
-            black_score,
-            white_score,
+            black_state,
+            white_state,
         }
     }
 
     fn on_new_turn(&mut self, game: &Game, stats: &MatchStatistics) -> std::io::Result<()> {
+        let black_score = if let Ok(black_state) = self.black_state.read() {
+            black_state.score
+        } else {
+            0
+        };
+
+        let white_score = if let Ok(white_state) = self.white_state.read() {
+            white_state.score
+        } else {
+            0
+        };
+
         let term = Term::stderr();
 
         if self.dirty {
@@ -46,8 +60,7 @@ impl BoardReporter {
         ))?;
         term.write_line(&format!(
             "Score (Black) {}, (White) {}",
-            self.black_score.load(Ordering::Relaxed),
-            self.white_score.load(Ordering::Relaxed)
+            black_score, white_score
         ))?;
         self.dirty = true;
 
@@ -89,9 +102,7 @@ impl Reporter for BoardReporter {
     fn on_game_event(&mut self, event: &Event, stats: &MatchStatistics) {
         match *event {
             Event::NewTurn(ref game, _) => {
-                if let Ok(game) = game.read() {
-                    self.on_new_turn(&game, stats).unwrap();
-                }
+                self.on_new_turn(game, stats).unwrap();
             }
             Event::GameOver(winner, reason) => {
                 self.on_game_over(winner, reason, stats).unwrap();
