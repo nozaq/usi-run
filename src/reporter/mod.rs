@@ -1,9 +1,7 @@
 use crate::environment::Event;
 use crate::stats::MatchStatistics;
-use ::usi::GuiCommand;
+use ::usi::{EngineOutput, GuiCommand};
 use shogi::Color;
-
-use crate::player::EngineOutput;
 
 pub trait Reporter {
     fn on_send_command(&mut self, _stm: Color, _command: &GuiCommand, _arg: &str) {}

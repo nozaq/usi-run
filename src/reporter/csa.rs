@@ -2,7 +2,8 @@ use chrono::Local;
 use csa::{Action, Color, GameRecord, MoveRecord, PieceType, Square, Time};
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 
-use crate::environment::{Event, GameOverReason};
+use crate::environment::Event;
+use crate::game::GameOverReason;
 use crate::stats::MatchStatistics;
 
 use super::Reporter;
@@ -90,10 +91,8 @@ impl Reporter for CsaReporter {
 
                 self.record = GameRecord::default();
 
-                if let Ok(game) = game.read() {
-                    self.record.black_player = Some(game.black_player.to_string());
-                    self.record.white_player = Some(game.white_player.to_string());
-                }
+                self.record.black_player = Some(game.black_player.to_string());
+                self.record.white_player = Some(game.white_player.to_string());
 
                 let now = Local::now();
                 self.record.start_time = Some(Time {
@@ -102,20 +101,15 @@ impl Reporter for CsaReporter {
                 });
             }
             Event::NewTurn(ref game, elapsed) => {
-                if let Ok(game) = game.read() {
-                    if let Some(last_move) = game.pos.move_history().last() {
-                        self.record.moves.push(MoveRecord {
-                            action: convert_move_to_action(
-                                game.pos.side_to_move().flip(),
-                                last_move,
-                            ),
-                            time: Some(elapsed),
-                        });
-                    }
+                if let Some(last_move) = game.pos.move_history().last() {
+                    self.record.moves.push(MoveRecord {
+                        action: convert_move_to_action(game.pos.side_to_move().flip(), last_move),
+                        time: Some(elapsed),
+                    });
+                }
 
-                    if let Some(ref pbar) = self.current_bar {
-                        pbar.set_message(&format!("Move #{}", game.pos.ply()));
-                    }
+                if let Some(ref pbar) = self.current_bar {
+                    pbar.set_message(&format!("Move #{}", game.pos.ply()));
                 }
             }
             Event::GameOver(_, reason) => {

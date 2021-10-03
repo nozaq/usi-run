@@ -30,10 +30,8 @@ impl Reporter for SimpleReporter {
                 self.current_bar = Some(pbar);
             }
             Event::NewTurn(ref game, _) => {
-                if let Ok(game) = game.read() {
-                    if let Some(ref pbar) = self.current_bar {
-                        pbar.set_message(&format!("Move #{}", game.pos.ply()));
-                    }
+                if let Some(ref pbar) = self.current_bar {
+                    pbar.set_message(&format!("Move #{}", game.pos.ply()));
                 }
             }
             Event::GameOver(winner, reason) => {

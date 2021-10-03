@@ -1,12 +1,17 @@
 use shogi::*;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use crate::config::MatchConfig;
+use crate::engine::{UsiEngine, WriteHookFn};
 use crate::error::Error;
-use crate::game::Game;
+use crate::game::{Game, GameOverReason, GameResult};
+use crate::reporter::Reporter;
+use crate::stats::MatchStatistics;
 
-pub type SharedGame = Arc<RwLock<Game>>;
+const DEFAULT_SFEN: &str = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - \
+                                    1";
 
 #[derive(Debug)]
 pub enum Action {
@@ -17,21 +22,12 @@ pub enum Action {
     Resign(Color),
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum GameOverReason {
-    Resign,
-    IllegalMove,
-    OutOfTime,
-    MaxPly,
-    DeclareWinning,
-}
-
-#[derive(Debug, Clone)]
-pub enum Event {
+#[derive(Debug)]
+pub enum Event<'a> {
     IsReady,
-    NewGame(SharedGame),
-    NewTurn(SharedGame, Duration),
-    NotifyState(SharedGame),
+    NewGame(&'a mut Game),
+    NewTurn(&'a mut Game, Duration),
+    NotifyState(&'a mut Game),
     GameOver(Option<Color>, GameOverReason),
 }
 
@@ -61,96 +57,105 @@ impl Environment {
         self.tx.clone()
     }
 
-    pub fn start_game(&mut self, game: Game, listeners: &[&Sender<Event>]) -> Result<(), Error> {
-        let transmit = |event: &Event| -> Result<(), Error> {
-            for l in listeners.iter() {
-                l.send(event.clone())?;
+    pub fn start_game(
+        &mut self,
+        config: &MatchConfig,
+        stats: &MatchStatistics,
+        black_engine: &mut UsiEngine,
+        white_engine: &mut UsiEngine,
+        reporter: Arc<Mutex<dyn Reporter + Send>>,
+    ) -> Result<GameResult, Error> {
+        let mut game = Game::new(config.time.to_time_control());
+        game.black_player = black_engine.name.to_string();
+        game.white_player = white_engine.name.to_string();
+        game.pos
+            .set_sfen(config.initial_pos.as_ref().map_or(DEFAULT_SFEN, |v| v))?;
+
+        let mut black_write_hook = Some(create_write_hook(Color::Black, reporter.clone()));
+        let mut white_write_hook = Some(create_write_hook(Color::Black, reporter.clone()));
+
+        let mut transmit = |event: &Event| -> Result<(), Error> {
+            black_engine.notify_event(event, &mut black_write_hook)?;
+            white_engine.notify_event(event, &mut white_write_hook)?;
+
+            if let Ok(mut reporter) = reporter.lock() {
+                reporter.on_game_event(event, stats);
             }
             Ok(())
         };
 
-        let shared_game = Arc::new(RwLock::new(game));
-
         transmit(&Event::IsReady)?;
         self.wait_readyok()?;
-        transmit(&Event::NewGame(shared_game.clone()))?;
+        transmit(&Event::NewGame(&mut game))?;
+        game.turn_start_time = Instant::now();
 
-        if let Ok(mut game) = shared_game.write() {
-            game.turn_start_time = Instant::now();
-        }
-        transmit(&Event::NewTurn(shared_game.clone(), Duration::from_secs(0)))?;
+        transmit(&Event::NewTurn(&mut game, Duration::from_secs(0)))?;
 
+        let mut result: Option<GameResult> = None;
         while let Ok(action) = self.rx.recv() {
             match action {
                 Action::RequestState => {
-                    transmit(&Event::NotifyState(shared_game.clone()))?;
+                    transmit(&Event::NotifyState(&mut game))?;
                 }
                 Action::MakeMove(c, ref m, ref ts) => {
-                    if let Ok(mut game) = shared_game.write() {
-                        if c != game.pos.side_to_move() {
-                            transmit(&Event::GameOver(Some(c), GameOverReason::IllegalMove))?;
-                            break;
-                        }
+                    if c != game.pos.side_to_move() {
+                        result = Some(GameResult::new(Some(c), GameOverReason::IllegalMove));
+                        break;
+                    }
 
-                        let elapsed = ts.duration_since(game.turn_start_time);
-                        if !game.time.consume(c, elapsed) {
-                            transmit(&Event::GameOver(Some(c.flip()), GameOverReason::OutOfTime))?;
-                            break;
-                        }
+                    let elapsed = ts.duration_since(game.turn_start_time);
+                    if !game.time.consume(c, elapsed) {
+                        result = Some(GameResult::new(Some(c.flip()), GameOverReason::OutOfTime));
+                        break;
+                    }
 
-                        match game.pos.make_move(*m) {
-                            Ok(_) => {
-                                if let Some(max_ply) = self.max_ply {
-                                    if game.pos.ply() >= max_ply {
-                                        transmit(&Event::GameOver(None, GameOverReason::MaxPly))?;
-                                        break;
-                                    }
+                    match game.pos.make_move(*m) {
+                        Ok(_) => {
+                            if let Some(max_ply) = self.max_ply {
+                                if game.pos.ply() >= max_ply {
+                                    result = Some(GameResult::new(None, GameOverReason::MaxPly));
+                                    break;
                                 }
+                            }
 
-                                game.turn_start_time = Instant::now();
-                                transmit(&Event::NewTurn(shared_game.clone(), elapsed))?;
-                            }
-                            Err(_) => {
-                                transmit(&Event::GameOver(
-                                    Some(c.flip()),
-                                    GameOverReason::IllegalMove,
-                                ))?;
-                                break;
-                            }
+                            game.turn_start_time = Instant::now();
+                            transmit(&Event::NewTurn(&mut game, elapsed))?;
+                        }
+                        Err(_) => {
+                            result =
+                                Some(GameResult::new(Some(c.flip()), GameOverReason::IllegalMove));
+                            break;
                         }
                     }
                 }
                 Action::Resign(c) => {
-                    if let Ok(game) = shared_game.read() {
-                        if c != game.pos.side_to_move() {
-                            transmit(&Event::GameOver(
-                                Some(c.flip()),
-                                GameOverReason::IllegalMove,
-                            ))?;
-                            break;
-                        }
-
-                        transmit(&Event::GameOver(Some(c.flip()), GameOverReason::Resign))?;
+                    if c != game.pos.side_to_move() {
+                        result = Some(GameResult::new(Some(c.flip()), GameOverReason::IllegalMove));
                         break;
                     }
+
+                    result = Some(GameResult::new(Some(c.flip()), GameOverReason::Resign));
+                    break;
                 }
                 Action::DeclareWinning(c) => {
-                    if let Ok(game) = shared_game.read() {
-                        if game.pos.try_declare_winning(c) {
-                            transmit(&Event::GameOver(Some(c), GameOverReason::DeclareWinning))?;
-                        } else {
-                            transmit(&Event::GameOver(
-                                Some(c.flip()),
-                                GameOverReason::DeclareWinning,
-                            ))?;
-                        }
+                    if game.pos.try_declare_winning(c) {
+                        result = Some(GameResult::new(Some(c), GameOverReason::DeclareWinning));
+                    } else {
+                        result = Some(GameResult::new(
+                            Some(c.flip()),
+                            GameOverReason::DeclareWinning,
+                        ));
                     }
                 }
                 _ => {}
             }
         }
 
-        Ok(())
+        if let Some(result) = &result {
+            transmit(&Event::GameOver(result.winner, result.reason))?;
+        }
+
+        Ok(result.unwrap())
     }
 
     fn wait_readyok(&self) -> Result<(), Error> {
@@ -175,71 +180,13 @@ impl Environment {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
+fn create_write_hook(color: Color, reporter: Arc<Mutex<dyn Reporter + Send>>) -> WriteHookFn {
+    let write_reporter = reporter.clone();
 
-    #[test]
-    fn run_game() {
-        let mut env = Environment::new();
-
-        let tx = env.new_sender();
-        let (black_tx, black_rx) = channel();
-        let (white_tx, white_rx) = channel();
-
-        thread::spawn(move || {
-            assert!(matches!(
-                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::IsReady)
-            ));
-            assert!(matches!(
-                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::IsReady)
-            ));
-
-            assert!(tx.send(Action::Ready(Color::Black)).is_ok());
-            assert!(tx.send(Action::Ready(Color::White)).is_ok());
-
-            assert!(matches!(
-                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::NewGame(_))
-            ));
-            assert!(matches!(
-                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::NewGame(_))
-            ));
-
-            assert!(matches!(
-                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::NewTurn(_, _))
-            ));
-            assert!(matches!(
-                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::NewTurn(_, _))
-            ));
-
-            assert!(tx.send(Action::Resign(Color::Black)).is_ok());
-
-            assert!(matches!(
-                black_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::GameOver(Some(Color::White), _))
-            ));
-            assert!(matches!(
-                white_rx.recv_timeout(Duration::from_secs(1)).ok(),
-                Some(Event::GameOver(Some(Color::White), _))
-            ));
-        });
-
-        let tc = TimeControl::Byoyomi {
-            black_time: Duration::from_millis(0),
-            white_time: Duration::from_millis(0),
-            byoyomi: Duration::from_millis(100),
-        };
-
-        let game = Game::new(tc);
-        let res = env.start_game(game, &[&black_tx, &white_tx]);
-        assert!(res.is_ok());
-    }
+    Box::new(move |command, raw_str| {
+        write_reporter
+            .lock()
+            .unwrap()
+            .on_send_command(color, command, raw_str);
+    })
 }
