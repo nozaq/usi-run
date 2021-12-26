@@ -1,0 +1,27 @@
+num_games = 1
+max_ply = 512
+
+[time_control]
+black_time = 0
+white_time = 0
+black_inc = 5000
+white_inc = 5000
+
+[black]
+engine_path = "/home/_/src/shogi/engines/Suishou/work/engine"
+working_dir = "/home/_/src/shogi/engines/Suishou/work"
+ponder = false
+
+    [black.options]
+    USI_Hash = 128
+    Threads = 1
+
+[white]
+engine_path = "/home/_/src/shogi/engines/Suishou/work/engine"
+working_dir = "/home/_/src/shogi/engines/Suishou/work"
+ponder = false
+
+    # Any key-value pairs to send to the white USI engine as "setoption" commands.
+    [white.options]
+    USI_Hash = 128
+    Threads = 1

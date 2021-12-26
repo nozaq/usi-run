@@ -1,4 +1,3 @@
-use chrono::Local;
 use csa::{Action, Color, GameRecord, MoveRecord, PieceType, Square, Time};
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 
@@ -94,11 +93,7 @@ impl Reporter for CsaReporter {
                 self.record.black_player = Some(game.black_player.to_string());
                 self.record.white_player = Some(game.white_player.to_string());
 
-                let now = Local::now();
-                self.record.start_time = Some(Time {
-                    date: now.date().naive_local(),
-                    time: Some(now.time()),
-                });
+                self.record.start_time = Some(Time::now());
             }
             Event::NewTurn(ref game, elapsed) => {
                 if let Some(last_move) = game.pos.move_history().last() {
@@ -122,11 +117,7 @@ impl Reporter for CsaReporter {
                 };
                 self.record.moves.push(MoveRecord { action, time: None });
 
-                let now = Local::now();
-                self.record.end_time = Some(Time {
-                    date: now.date().naive_local(),
-                    time: Some(now.time()),
-                });
+                self.record.end_time = Some(Time::now());
 
                 if let Some(ref pbar) = self.current_bar {
                     pbar.finish_and_clear();
