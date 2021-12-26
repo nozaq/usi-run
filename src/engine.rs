@@ -84,7 +84,7 @@ impl UsiEngine {
                                         *output.timestamp(),
                                     ))?;
                                 } else {
-                                    return Err(Error::Sfen(SfenError {}));
+                                    return Err(Error::Sfen(SfenError::IllegalMove));
                                 }
                             }
                         }
