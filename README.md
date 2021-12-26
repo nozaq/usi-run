@@ -12,13 +12,13 @@ Tested with popular USI engines, e.g. [Apery](https://github.com/HiraokaTakuya/a
 
 `usi-run` can be installed from Cargo.
 
-```
+```sh
 $ cargo install usi-run
 ```
 
 ## Usage
 
-```
+```text
 A command line utility for running games between USI compliant Shogi engines.
 
 USAGE:
@@ -34,6 +34,7 @@ OPTIONS:
 ```
 
 A configuration file looks like the following. See [example.toml](https://github.com/nozaq/usi-run/blob/master/example.toml) for more detail.
+
 ```toml
 num_games = 10
 max_ply = 256
