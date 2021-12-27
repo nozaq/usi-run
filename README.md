@@ -1,7 +1,7 @@
 # usi-run
 
 [![Github Actions](https://github.com/nozaq/usi-run/workflows/build/badge.svg)](https://github.com/nozaq/usi-run/actions?workflow=build)
-[![Coverage Status](https://coveralls.io/repos/github/nozaq/usi-run/badge.svg?branch=master)](https://coveralls.io/github/nozaq/usi-run?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/nozaq/usi-run/badge.svg)](https://coveralls.io/github/nozaq/usi-run)
 [![crates.io](https://img.shields.io/crates/v/usi-run.svg)](https://crates.io/crates/usi-run)
 
 A command line utility for automatically running games between USI compliant Shogi engines and collect match statistics.
@@ -40,7 +40,7 @@ num_games = 10
 max_ply = 256
 
 [time_control]
-black_time = 60000
+black_time = 60000w
 white_time = 60000
 black_inc = 10000
 white_inc = 10000
