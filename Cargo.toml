@@ -12,13 +12,13 @@ edition = "2021"
 
 [dependencies]
 time = "0.3"
-clap = "2"
+clap = { version = "3", features = ["cargo"]}
 console = "0.9"
 csa = "1.0"
-indicatif = "0.11"
+indicatif = "0.16"
 shogi = "0.12"
 toml = "0.5"
-usi = "0.5"
+usi = "0.6"
 
 [badges]
 travis-ci = { repository = "nozaq/usi-run" }

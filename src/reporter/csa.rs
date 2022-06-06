@@ -84,7 +84,7 @@ impl Reporter for CsaReporter {
                         .tick_chars("|/-\\ ")
                         .template("{prefix:.bold.dim} {spinner} {msg}"),
                 );
-                pbar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
+                pbar.set_prefix(format!("[{}/{}]", current_game_num, num_games));
                 pbar.set_message("Starting...");
                 self.current_bar = Some(pbar);
 
@@ -104,7 +104,7 @@ impl Reporter for CsaReporter {
                 }
 
                 if let Some(ref pbar) = self.current_bar {
-                    pbar.set_message(&format!("Move #{}", game.pos.ply()));
+                    pbar.set_message(format!("Move #{}", game.pos.ply()));
                 }
             }
             Event::GameOver(_, reason) => {

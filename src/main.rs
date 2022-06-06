@@ -6,7 +6,7 @@ mod game;
 mod reporter;
 mod stats;
 
-use clap::{crate_version, App, Arg};
+use clap::{crate_version, Arg, Command};
 use shogi::bitboard::Factory;
 use shogi::Color;
 use std::sync::{Arc, Mutex, RwLock};
@@ -19,12 +19,12 @@ use reporter::{BoardReporter, CsaReporter, Reporter, SimpleReporter, UsiReporter
 use stats::*;
 
 fn main() {
-    let matches = App::new("usirun")
+    let matches = Command::new("usirun")
         .version(crate_version!())
         .about("A command line utility for running games between USI compliant Shogi engines.")
         .arg(
-            Arg::with_name("config")
-                .short("c")
+            Arg::new("config")
+                .short('c')
                 .long("config")
                 .value_name("TOML")
                 .help("Loads a configuration file for setting up match rules")
@@ -32,8 +32,8 @@ fn main() {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("display")
-                .short("d")
+            Arg::new("display")
+                .short('d')
                 .long("display")
                 .value_name("MODE")
                 .help("Displays ")

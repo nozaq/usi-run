@@ -25,13 +25,13 @@ impl Reporter for SimpleReporter {
                         .tick_chars("|/-\\ ")
                         .template("{prefix:.bold.dim} {spinner} {msg}"),
                 );
-                pbar.set_prefix(&format!("[{}/{}]", current_game_num, num_games));
+                pbar.set_prefix(format!("[{}/{}]", current_game_num, num_games));
                 pbar.set_message("Starting...");
                 self.current_bar = Some(pbar);
             }
             Event::NewTurn(ref game, _) => {
                 if let Some(ref pbar) = self.current_bar {
-                    pbar.set_message(&format!("Move #{}", game.pos.ply()));
+                    pbar.set_message(format!("Move #{}", game.pos.ply()));
                 }
             }
             Event::GameOver(winner, reason) => {
@@ -43,7 +43,7 @@ impl Reporter for SimpleReporter {
                         }
                         None => format!("Draw({:?})", reason),
                     };
-                    pbar.finish_with_message(&result);
+                    pbar.finish_with_message(result);
                 }
             }
             _ => {}

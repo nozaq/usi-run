@@ -36,8 +36,9 @@ impl UsiEngine {
         think_state: Arc<RwLock<ThinkState>>,
     ) -> Result<UsiEngine, Error> {
         let mut handler = UsiEngineHandler::spawn(&config.engine_path, &config.working_dir)?;
+        handler.prepare()?;
 
-        let info = handler.prepare()?;
+        let info = handler.get_info()?;
 
         let mut options = info.options().clone();
         for &(ref name, ref value) in &config.options {
