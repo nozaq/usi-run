@@ -82,7 +82,8 @@ impl Reporter for CsaReporter {
                 pbar.set_style(
                     ProgressStyle::default_spinner()
                         .tick_chars("|/-\\ ")
-                        .template("{prefix:.bold.dim} {spinner} {msg}"),
+                        .template("{prefix:.bold.dim} {spinner} {msg}")
+                        .unwrap(),
                 );
                 pbar.set_prefix(format!("[{}/{}]", current_game_num, num_games));
                 pbar.set_message("Starting...");
