@@ -28,8 +28,8 @@ fn main() {
                 .long("config")
                 .value_name("TOML")
                 .help("Loads a configuration file for setting up match rules")
-                .required(true)
-                .takes_value(true),
+                .num_args(1)
+                .required(true),
         )
         .arg(
             Arg::new("display")
@@ -37,21 +37,21 @@ fn main() {
                 .long("display")
                 .value_name("MODE")
                 .help("Displays ")
-                .takes_value(true)
-                .possible_values(&["board", "csa", "command", "simple"])
+                .num_args(1)
+                .value_parser(["board", "csa", "command", "simple"])
                 .default_value("simple"),
         )
         .get_matches();
 
     let mut match_config = MatchConfig::default();
-    if let Some(config_path) = matches.value_of("config") {
+    if let Some(config_path) = matches.get_one::<String>("config") {
         match_config
             .load(config_path)
             .unwrap_or_else(|_| panic!("failed to open the config file at {}", config_path));
     }
 
-    if let Some(display) = matches.value_of("display") {
-        match_config.display = match display {
+    if let Some(display) = matches.get_one::<String>("display") {
+        match_config.display = match display.as_str() {
             "board" => DisplayMode::Board,
             "command" => DisplayMode::Command,
             "csa" => DisplayMode::Csa,
