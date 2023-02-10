@@ -59,8 +59,7 @@ impl BoardReporter {
             game.time.white_time().as_secs()
         ))?;
         term.write_line(&format!(
-            "Score (Black) {}, (White) {}",
-            black_score, white_score
+            "Score (Black) {black_score}, (White) {white_score}"
         ))?;
         self.dirty = true;
 
@@ -83,9 +82,9 @@ impl BoardReporter {
         let result = match winner {
             Some(c) => {
                 let name = if c == Color::Black { "Black" } else { "White" };
-                format!("{} won the game. ({:?})", name, reason)
+                format!("{name} won the game. ({reason:?})")
             }
-            None => format!("Draw({:?})", reason),
+            None => format!("Draw({reason:?})"),
         };
         term.write_line(&format!(
             "[{}/{}] {}",

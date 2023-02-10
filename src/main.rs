@@ -47,7 +47,7 @@ fn main() {
     if let Some(config_path) = matches.get_one::<String>("config") {
         match_config
             .load(config_path)
-            .unwrap_or_else(|_| panic!("failed to open the config file at {}", config_path));
+            .unwrap_or_else(|_| panic!("failed to open the config file at {config_path}"));
     }
 
     if let Some(display) = matches.get_one::<String>("display") {
@@ -64,7 +64,7 @@ fn main() {
     match run_match(&match_config) {
         Ok(_) => {}
         Err(e) => {
-            println!("an error occurred during the match: {}", e);
+            println!("an error occurred during the match: {e}");
         }
     }
 }

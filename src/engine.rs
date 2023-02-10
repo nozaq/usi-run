@@ -41,7 +41,7 @@ impl UsiEngine {
         let info = handler.get_info()?;
 
         let mut options = info.options().clone();
-        for &(ref name, ref value) in &config.options {
+        for (name, value) in &config.options {
             options.insert(name.to_string(), value.to_string());
         }
         options.insert("USI_Ponder".to_string(), config.ponder.to_string());
@@ -174,7 +174,7 @@ impl UsiEngine {
                         write(&GuiCommand::Go(build_think_params(&game.time)))?;
                     } else if let Some(ponder_move) = think_state.pondering {
                         let sfen = game.pos.to_sfen();
-                        write(&GuiCommand::Position(format!("{} {}", sfen, ponder_move)))?;
+                        write(&GuiCommand::Position(format!("{sfen} {ponder_move}")))?;
                         write(&GuiCommand::Go(build_think_params(&game.time).ponder()))?;
                     }
                 }
