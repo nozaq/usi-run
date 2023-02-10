@@ -85,7 +85,7 @@ impl Reporter for CsaReporter {
                         .template("{prefix:.bold.dim} {spinner} {msg}")
                         .unwrap(),
                 );
-                pbar.set_prefix(format!("[{}/{}]", current_game_num, num_games));
+                pbar.set_prefix(format!("[{current_game_num}/{num_games}]"));
                 pbar.set_message("Starting...");
                 self.current_bar = Some(pbar);
 
