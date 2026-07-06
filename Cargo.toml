@@ -13,7 +13,7 @@ edition = "2021"
 [dependencies]
 time = "0.3"
 clap = { version = "4", features = ["cargo"]}
-console = "0.15"
+console = "0.16"
 csa = "1.0"
 indicatif = "0.17"
 shogi = "0.12"
