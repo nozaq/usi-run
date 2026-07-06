@@ -1,12 +1,36 @@
 {
     "name": "Rust",
     "image": "ghcr.io/bare-devcontainer/rust:trixie",
+    "remoteEnv": {
+        "EDITOR": "code --wait",
+        "VISUAL": "code --wait"
+    },
     "postCreateCommand": "rustup show",
+    "mounts": [
+        {
+            "source": "${devcontainerId}-rust-cargo-registry",
+            "target": "/home/dev/.cargo/registry",
+            "type": "volume"
+        },
+        {
+            "source": "${devcontainerId}-rust-cargo-git",
+            "target": "/home/dev/.cargo/git",
+            "type": "volume"
+        }
+    ],
     "customizations": {
         "vscode": {
             "extensions": [
-                "EditorConfig.EditorConfig"
-            ]
+                "anthropic.claude-code",
+                "EditorConfig.EditorConfig",
+                "rust-lang.rust-analyzer"
+            ],
+            "settings": {
+                "[rust]": {
+                    "editor.formatOnSave": true,
+                    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+                }
+            }
         }
     }
 }
