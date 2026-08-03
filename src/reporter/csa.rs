@@ -128,7 +128,7 @@ impl Reporter for CsaReporter {
                     println!("/");
                 }
 
-                print!("{}", &self.record.to_string());
+                print!("{}", self.record);
             }
             _ => {}
         }
